@@ -1,13 +1,21 @@
-#!/bin/sh
-DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+#!/usr/bin/env bash
+
+# build.sh
+
+set -e
+
+REPO_ROOT="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+DIR="${REPO_ROOT}"
 
 echo "===Running build script===\n\n"
-for folder in $(ls pycardio | grep c_)
+for folder in $REPO_ROOT/pycardio/c_*
 do
-    echo "Building ${folder}\n"
-    cd "./pycardio/${folder}"
+    echo "Building shared objects in: ${folder}...\n"
+    cd "${folder}"
     make
-    echo "${folder} done.\n"
+    echo "done.\n"
     echo "==================\n"
     cd $DIR
 done
+
+cd 

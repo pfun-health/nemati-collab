@@ -80,7 +80,7 @@ class Sampler(object):
         self.nsamples = nsamples # number of samples to produce per process
         self.minsamples = minsamples # minimum number of samples per iteration
         
-        self.cov = np.array(step_size, dtype=np.float).reshape(
+        self.cov = np.array(step_size, dtype=float).reshape(
             (len(params.keys()),len(params.keys()))) # multivariate step size
         self.pre_cov = [] # previous covariance matrices
         
@@ -104,13 +104,13 @@ class Sampler(object):
 
     @property
     def _getx0(self): # Get the initial sample as a numpy array
-        return np.array([pi for pk, pi in sorted(list(self.params_init.items()))], dtype=np.float)
+        return np.array([pi for pk, pi in sorted(list(self.params_init.items()))], dtype=float)
 
     @property
     def _getx1(self): # Get the last sample in the paramSpace
         return np.array([self.paramSpace[pk][-1] for\
                          pk in sorted(self.params_init.keys())],
-                        dtype=np.float)
+                        dtype=float)
 
     @property
     def _getx(self): # Get the paramSpace as an array of all samples
@@ -118,7 +118,7 @@ class Sampler(object):
         for pix in range(len(self.paramSpace['L'])):
             prow = [self.paramSpace[pk][pix] for pk in sorted(list(self.params_init.keys()))]
             xp.append(prow)
-        return np.array(xp, dtype=np.float).reshape(-1,len(self.params_init.keys()))
+        return np.array(xp, dtype=float).reshape(-1,len(self.params_init.keys()))
 
     def _updateParamSpace(self, x): # Append the sample to the list in paramSpace
         for px, pk in enumerate(sorted(list(self.params_init.keys()))):

@@ -56,12 +56,14 @@ void update_path(double *path,
 
   double mueff = s->mueff;
   double lambda = (double) s->lambda;
+  double cc;
+  double cs;
 
   if (path_id == "s"){ // path = ps
-    double cs = adp->cs;
+    cs = adp->cs;
   }
   else if (path_id == "c"){ // path = pc
-    double cc = adp->cc;
+    cc = adp->cc;
     
     double ps_norm = 0.0;
     for(int i=0; i < N; i++){ // euclidean norm of ps

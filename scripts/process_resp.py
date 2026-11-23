@@ -67,7 +67,7 @@ if __name__ == '__main__':
         for ka, va in out_dict.items():
             if ka in ['old', 'young']:
                 good_beats = [b for b in va['beats'] if not np.flatnonzero(np.isnan(b)).any()]
-                out_dict[ka]['beats'] = np.array(good_beats,dtype=np.float).reshape((-1,nr_bins))
+                out_dict[ka]['beats'] = np.array(good_beats,dtype=float).reshape((-1,nr_bins))
                 out_dict[ka]['lat'] = out_dict[ka]['lat']
                 out_dict[ka]['heights'] = out_dict[ka]['beats'].mean(0).tolist()
                 out_dict[ka]['errors'] = out_dict[ka]['beats'].std(0).tolist()

@@ -8,9 +8,9 @@ void pairwise_dists(double x1[], int N1, double x2[], int N2,
     k = 0;
     for(i=0; i<N1; i++){
         for(j=0; j<N2; j++){
-            dists[k].ix = k
-            dists[k].ix1 = i
-            dists[k].ix2 = j
+	  dists[k].ix = k;
+	  dists[k].ix1 = i;
+	  dists[k].ix2 = j;
             dists[k].dist = pow(x1[i]-x2[j], 2);
             k++;
         }

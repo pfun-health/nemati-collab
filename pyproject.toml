@@ -1,0 +1,28 @@
+[project]
+name = "nemati-collab"
+version = "0.1.0"
+description = "Elucidate the cardiorespiratory circuitry underlying autonomic control of breathing, blood pressure, heart rate."
+readme = "README.md"
+requires-python = ">=3.11.0, <3.12"
+dependencies = [
+    # wfdb 1.3.7 (2018) declares unbounded deps but breaks on pandas>=2 / numpy>=2.
+    "wfdb==1.3.7",
+    "numpy>=1.23,<2",
+    "pandas>=1.5,<2",
+    "scipy>=1.9,<1.14",
+    "matplotlib>=3.6,<3.10",
+    "requests",
+    "google-cloud-storage>=3.17.1",
+]
+
+[tool.uv.extra-build-dependencies]
+# wfdb's setup.py imports the package to read its version, so its runtime
+# deps must be present (and compatible) at build time.
+wfdb = [
+    "setuptools",
+    "numpy>=1.23,<2",
+    "pandas>=1.5,<2",
+    "scipy>=1.9,<1.14",
+    "matplotlib>=3.6,<3.10",
+    "requests",
+]

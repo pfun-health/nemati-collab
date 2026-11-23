@@ -248,8 +248,8 @@ class DB(object):
                 rri = [b[1] for b in rri_phase]
                 return phases, rri
         rri_phase = [find_beats(pks_ix[ri0], pks_ix[ri0+1]) for ri0 in range(0, len(pks_ix)-1)]
-        rri = np.array([b[1] for bb in rri_phase for b in bb]).astype(np.float)
-        phase = np.array([b[0] for bb in rri_phase for b in bb]).astype(np.float)
+        rri = np.array([b[1] for bb in rri_phase for b in bb]).astype(float)
+        phase = np.array([b[0] for bb in rri_phase for b in bb]).astype(float)
         rri_dev = rri - rri.mean()
         return phase, rri_dev
 
@@ -261,10 +261,10 @@ class DB(object):
             if DB.sanity_check_cycle(time, r0, r1): # Make sure the cycle is not too short or too long
                 chosen_ix = beat_ix[(beat_ix >= r0) & (beat_ix <= r1)]
                 cycle_time = time[r1]-time[r0] if norm else 1.0
-                return np.array((time[chosen_ix]-time[r0])/cycle_time, dtype=np.float)
+                return np.array((time[chosen_ix]-time[r0])/cycle_time, dtype=float)
             return None
         beats_norm = [find_beats(pks_ix[ri0], pks_ix[ri0+1]) for ri0 in range(0, len(pks_ix)-1)]
-        beats_norm = np.concatenate([bb for bb in beats_norm if bb is not None]).astype(np.float)
+        beats_norm = np.concatenate([bb for bb in beats_norm if bb is not None]).astype(float)
         # beats_norm = DB.normalize(beats_norm)
         if retpks: return pks_ix, beats_norm
         return beats_norm
@@ -288,12 +288,12 @@ class DB(object):
                     resp_cycle = resp[min_ix-sthresh:min_ix+sthresh].copy()
                     print("oops: {:d}, {:d}, {:d}".format(resp_cycle.shape[0],min_ix,sthresh)) if len(resp_cycle) != sthresh*2 else 0
                     if len(resp_cycle) >= sthresh*2:
-                        return ( np.array((chosen_beats-min_time)*1000.0, dtype=np.float), resp_cycle )
+                        return ( np.array((chosen_beats-min_time)*1000.0, dtype=float), resp_cycle )
             return None, None
         beat_latency = [find_beats(resp_max[ri0], resp_max[ri0+1]) for ri0 in range(0, len(resp_max)-1)]
         beat_latency = [(check_beats(bb), ri) for bb, ri in beat_latency if bb is not None]
-        nr_resp_cycles = np.sum(np.array([1.0 for bb, ri in beat_latency],dtype=np.float))
-        beat_latency = np.concatenate([bb for bb, ri in beat_latency]).astype(np.float)
+        nr_resp_cycles = np.sum(np.array([1.0 for bb, ri in beat_latency],dtype=float))
+        beat_latency = np.concatenate([bb for bb, ri in beat_latency]).astype(float)
         # beat_latency = DB.normalize(beat_latency)
         if len(beat_latency) > 0:
             print(" Mean beat latency: {:f} +/- {:f}  ;  Range: {:f}\n".format(

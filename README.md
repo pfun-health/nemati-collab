@@ -1,3 +1,17 @@
+# nemati-collab
+
+**Note:** This repository is from 2017 when I worked in the Molkov Lab, Neuroscience Institute, Georgia State University; I updated it recently (November, 2026) to make sure the code still runs. Obligatory AI disclaimer: I used Claude Code when performing the recent updates--- limited to aesthetic, ease-of-use.
+
+## Summary & Objectives
+
+### Objectives
+
+Elucidate the cardiorespiratory circuitry underlying autonomic control of breathing, blood pressure, heart rate. This repository includes code related to analysis and model-fitting. The sample configurations are for the sample dataset I used (PhysioNet, Fantasia ECG dataset).
+
+### Code Summary
+
+The repository contains the latest version of the cardiovascular model (implemented in C) and optimized data processing code written in C. The model optimization module (fit_model) is accessible from Python.
+
 ## Example scripts
 
 #### Produce model output file (.npy format) for subject 'f1y02':
@@ -14,20 +28,12 @@ $ python3 phase_time_plot.py
 
 ### Dependencies
 
-- Python 3.5 >= (developed with 3.6.5)
-- GNU Scientific Library (GSL) >= 2.0 (developed with 2.4)
-
-- numpy >= 1.14
-- scipy >= 1.0
-- matplotlib >= 2.2.0
+- Python >=3.5,<3.12 (developed with 3.6.5)
 - wfdb-python == 1.3.7
 
-```bash
+#### [extra] Required for model optimization
 
-pip3 install numpy scipy matplotlib
-pip3 install wfdb-python==1.3.7
-
-```
+- GNU Scientific Library (GSL) >= 2.0 (developed with 2.4)
 
 ### Install steps
 
@@ -41,13 +47,17 @@ First, install all the dependencies.
 
 4. Set any other variables in the config file so that they do what you want. See the examples below for an idea of what variables you might change.
 
-5. Build the C sources by running the build script. Check for errors
+5. Build the C sources by running the build script. Check for errors.
 
-6. Run the scripts as in the examples below.
+6. Install the python package using `uv`.
 
-## Summary
-The `master` branch of this repository contains the latest version of the cardiovascular model (implemented in C) and optimized data processing code written in C.
-The model optimization module (fit_model) is accessible from Python.
+```bash
+
+$ uv sync
+
+```
+
+To get started, run the scripts as in the examples below.
 
 ## Example usage
 
@@ -117,11 +127,3 @@ nemati-collab/          ||      "Top-level repository directory"
 │   └── process_data    ||      "Python data processing module (accesses c_process-data)"
 └── tests               ||      "Tests of various features"
 ```
-
-
---------------
-#### Branches:
-- master: contains the latest version of the model and optimized data processing code.
-- pre-optimization: the last version with the data processing written in Python (and no model code).
-- matlab: an old version of the model from Fall 2017.
-- baroreflex-example: a matlab implementation of a model from Ottesen 1997.

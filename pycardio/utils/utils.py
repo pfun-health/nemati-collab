@@ -13,7 +13,7 @@ def simple_fourier(phase, A, B):
     return A*np.cos(2*np.pi*phase) + B*np.sin(2*np.pi*phase)
 
 def complex_fourier(phase, *params):
-    result = np.array([simple_fourier(phase, params[i-1], B) for i, B in enumerate(params[1:])], dtype=np.float)
+    result = np.array([simple_fourier(phase, params[i-1], B) for i, B in enumerate(params[1:])], dtype=float)
     result = result.sum(0)
     return result
 
@@ -29,7 +29,7 @@ def interp_cvc(vec_data, cdf_data, vec_model, cdf_model):
         model_interp.append(cdf)
     model_interp.append(cdf_model[-1])
 
-    model_interp = np.array(model_interp, dtype=np.float).reshape(-1)
+    model_interp = np.array(model_interp, dtype=float).reshape(-1)
 
     data_interp = cdf_data
     phi = vec_data

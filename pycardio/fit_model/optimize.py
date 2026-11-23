@@ -71,7 +71,7 @@ class Optimizer(object):
 
     @property
     def _getx0(self): # Get the initial sample as a numpy array
-        return np.array([pi for pk, pi in sorted(list(self.params_init.items()))], dtype=np.float)
+        return np.array([pi for pk, pi in sorted(list(self.params_init.items()))], dtype=float)
         
     def _getData(self, name):
         """ quickly get any optimization feature by its name, e.g. "rri"
@@ -264,7 +264,7 @@ class Optimizer(object):
 
             psize = alg_args['popsize']
             ga_init = np.array([np.linspace(x_init[xi]-0.1*x_init[xi], x_init[xi]+0.1*x_init[xi], psize)\
-                                for xi in range(len(x_init))],dtype=np.float).reshape(-1,len(x_init))
+                                for xi in range(len(x_init))],dtype=float).reshape(-1,len(x_init))
             alg_args.update({ 'init': ga_init })
             
             result = opt_method(self._generateCost, bounds, **alg_args)
@@ -365,7 +365,7 @@ class Optimizer(object):
         def getPrevX():
             pnames = sorted(list(self.params_init.keys()))
             plist = [self.paramSpace[pk][-1] for pk in pnames]
-            return np.array(plist, dtype=np.float)
+            return np.array(plist, dtype=float)
 
         if len(self.paramSpace['cost']) < 2: return True
         

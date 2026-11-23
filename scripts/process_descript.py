@@ -26,16 +26,16 @@ def calc_stats(subject, db):
     hist1 = db.normalize(hist1)
 
     out_dict = {'beats': np.array(hist0), 'lat': np.array(hist1)}
-    out_dict['beats'] = np.array(out_dict['beats'],dtype=np.float)
+    out_dict['beats'] = np.array(out_dict['beats'],dtype=float)
     out_dict['lat'] = out_dict['lat'].tolist()
     out_dict['beats'] = out_dict['beats'].tolist()
 
-    lat_peaks = db.find_peaks(np.array(out_dict['lat'],dtype=np.float), order=5)
+    lat_peaks = db.find_peaks(np.array(out_dict['lat'],dtype=float), order=5)
     lat_modes = bin_edges1[lat_peaks]
     nr_clust = '\nFound {:d} clusters; modes: {:s}'.format(len(lat_modes),str(lat_modes.tolist()))
     print(nr_clust)
     
-    HR = np.float(len(beat_ix)) / (time[beat_ix[-1]]-time[beat_ix[0]])
+    HR = float(len(beat_ix)) / (time[beat_ix[-1]]-time[beat_ix[0]])
     resp_rate = resp_count / (time[-1]-time[0])
     rotn = HR / resp_rate
     rot_nr = '\nHR: {:f} ; Resp: {:f} ; Rotation number: {:f}'.format(HR,resp_rate,rotn,)

@@ -125,7 +125,7 @@ class DB(object):
             Q = np.sqrt(np.power(popt, 2).sum())
             rri_var = (np.diag(pcov).sum() / np.power(Q, 2)) / np.sqrt(phase.size)
             print("Q : {:.2f} +- {:.4f} sec".format(Q, np.sqrt(rri_var)))
-            rri_var = np.array([rri_var,]*phase.size, dtype=np.float)
+            rri_var = np.array([rri_var,]*phase.size, dtype=float)
             rri_dev = simple_fourier(phase, popt[0], popt[1])
             rri_mean = rri.mean()
             return rri_times, phase, rri, rri_mean, rri_var, rri_dev, Q
@@ -140,11 +140,11 @@ class DB(object):
             if DB.sanity_check_cycle(time, r0, r1): # Make sure the cycle is not too short or too long
                 chosen_ix = beat_ix[(beat_ix >= r0) & (beat_ix <= r1)]
                 cycle_time = time[r1]-time[r0] if norm else 1.0
-                return np.array(time[chosen_ix], dtype=np.float), np.array((time[chosen_ix]-time[r0])/cycle_time, dtype=np.float)
+                return np.array(time[chosen_ix], dtype=float), np.array((time[chosen_ix]-time[r0])/cycle_time, dtype=float)
             return None
         beats_norm = [find_beats(pks_ix[ri0], pks_ix[ri0+1]) for ri0 in range(0, len(pks_ix)-1)]
-        beat_times = np.concatenate([bb[0] for bb in beats_norm if bb is not None]).astype(np.float)
-        beats_norm = np.concatenate([bb[1] for bb in beats_norm if bb is not None]).astype(np.float)
+        beat_times = np.concatenate([bb[0] for bb in beats_norm if bb is not None]).astype(float)
+        beats_norm = np.concatenate([bb[1] for bb in beats_norm if bb is not None]).astype(float)
         if retpks: return pks_ix, beats_norm
         return beat_times, beats_norm
 

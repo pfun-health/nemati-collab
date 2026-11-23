@@ -107,8 +107,15 @@ double ** upperTriangle(double **mat, int N, int k){
 
 void eigenspace(double **mat, double *evals, double **evecs, int N){
   /* Find the eigendecomposition of a square matrix */
+
+  double * mat_flat;
+  for(int i=0; i < N; i++) {
+    for(int j=0; j < N; j++) {
+      mat_flat[i*N + j] = mat[i][j];
+    }
+  }
   
-  gsl_matrix_view m = gsl_matrix_view_array(mat, N, N);
+  gsl_matrix_view m = gsl_matrix_view_array(mat_flat, N, N);
   gsl_vector *eval_v = gsl_vector_alloc(N);
   gsl_matrix *evec_v = gsl_matrix_alloc(N, N);
   
