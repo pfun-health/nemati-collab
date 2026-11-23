@@ -197,3 +197,39 @@ def test_options_for_another_method_are_ignored(target):
     with pytest.warns(UserWarning, match="mutation"):
         res = pc.fit(problem, method="cmaes", maxfev=20, verbose=False, mutation=(0.5, 1.0))
     assert np.isfinite(res.cost)
+
+
+def test_cost_does_not_reward_a_noisier_model():
+    """The spread in the denominator comes from the recording. If it came from
+    the model, a model with the wrong mean could score well just by being noisy."""
+    rng = np.random.default_rng(0)
+
+    def with_rri(mean, sd, n):
+        f = pc.simulate(duration=20).features()
+        f.rri = mean + sd * rng.standard_normal(n)
+        return f
+
+    data = with_rri(1.0, 0.05, 2000)
+    quiet_wrong = with_rri(1.05, 0.05, 300)
+    noisy_wrong = with_rri(1.05, 0.50, 300)
+    # with the model's own spread in the denominator the noisy one would score ~3
+    assert costs.cost_rri(data, quiet_wrong) > 50
+    assert costs.cost_rri(data, noisy_wrong) > 30
+
+    ph = rng.random(2000)
+    d = pc.simulate(duration=20).features()
+    d.rsa = pc.features.fit_rsa(
+        ph, 1 + 0.02 * np.cos(2 * np.pi * ph) + 0.03 * rng.standard_normal(2000)
+    )
+    phm = rng.random(300)
+
+    def model_rsa(amp, sd):
+        m = pc.simulate(duration=20).features()
+        m.rsa = pc.features.fit_rsa(
+            phm, 1 + amp * np.cos(2 * np.pi * phm) + sd * rng.standard_normal(300)
+        )
+        return m
+
+    good = costs.cost_rsa(d, model_rsa(0.02, 0.03))
+    big_and_noisy = costs.cost_rsa(d, model_rsa(0.16, 0.30))
+    assert good < 15 < 200 < big_and_noisy

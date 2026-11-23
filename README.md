@@ -20,7 +20,7 @@ library are no longer needed).
 
 ```bash
 uv sync            # or: pip install -e .
-uv run pytest      # 66 tests, about a minute
+uv run pytest      # 67 tests, about a minute
 ```
 
 ## Quick start
@@ -42,6 +42,10 @@ uv run pycardio fit config/fantasia_f2y03_rsa_ga.json --method cmaes --maxfev 15
 uv run pycardio sample config/fantasia_f2y03_rsa_ga.json --start-from results/fit_f2y03_rsa.json
 uv run pycardio plot f2y03 --fit results/fit_f2y03_rsa.json
 ```
+
+Results for all 40 recordings and an example fit are shown at
+<https://pfun.one/examples/physionet-fantasia>; its data file is produced by
+`examples/fantasia_dashboard_data.py`.
 
 Data location: `--data-dir`, else `$PYCARDIO_DATA_DIR`, else `~/Public`; the
 database folder (`fantasia/`) is expected inside it.
@@ -89,8 +93,9 @@ in ms. Noise enters through the early-I adaptation.
 | `cvc` | distribution of heartbeat phase within the breath from inspiration onset |
 | also | heart rate, breathing rate, rotation number (beats per breath), DFA α₁ |
 
-**Cost** (`pycardio/costs.py`). Squared differences divided by the variance of
-the difference (data and model uncertainty together): z-scores for `rri` and
+**Cost** (`pycardio/costs.py`). Squared differences divided by the variance the
+difference would have if the model had the recording's variability (both
+sample sizes count; the spread always comes from the recording): z-scores for `rri` and
 `resp`, a Mahalanobis distance on the Fourier coefficients for `rsa`, and a
 two-sample Kolmogorov-Smirnov statistic plus the `rsa` and `resp` terms for
 `cvc`.
@@ -128,9 +133,9 @@ pycardio/
 ├── costs.py                      data-model discrepancy
 ├── cmaes.py, fitting.py          optimisation
 ├── mcmc.py                       posterior sampling
-├── data.py                       PhysioNet loading, artefact-free ranges, caching
+├── data.py                       PhysioNet loading, hand-picked epochs, caching
 ├── config.py, cli.py, plotting.py
-└── data/fantasia/*.rng           artefact-free sample ranges per subject
+└── data/fantasia/*.rng           hand-picked epochs per subject (opt-in)
 config/                           run configurations (2018 format, still readable)
 tests/                            pytest suite (no dataset needed)
 ```
@@ -139,9 +144,9 @@ tests/                            pytest suite (no dataset needed)
 
 See the "What has and has not been verified" section of
 [CHANGES-AI.md](CHANGES-AI.md). In short: no 2018 result has been reproduced
-with the new code, only two subjects have been run through it, and the cost
-is strict because the model is almost deterministic, so posterior intervals
-are narrow.
+with the new code, and only one subject has been fitted (three parameters
+to three RSA numbers, which shows the machinery works, not that the model
+explains the subject).
 
 ## Data and references
 

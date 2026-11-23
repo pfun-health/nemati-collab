@@ -25,7 +25,7 @@ To see exactly what the overhaul changed: `git diff bad301d overhaul`.
   the heartbeat marker on the model's cardiac pulse.
 - **The overall approach**: extract the same features from data and model,
   score the mismatch, optimise, then sample.
-- **The configs** in `config/` and the artefact-free ranges (`*.rng`), which
+- **The configs** in `config/` and the hand-picked epochs (`*.rng`), which
   are unchanged apart from the `.rng` files moving into the package.
 
 ## Bugs found in the original code
@@ -40,7 +40,7 @@ overhaul. Severity is my judgement of the effect on results.
 | 1 | `process_data/db.py` `calc_descriptive` | "Rotation number" was computed as mean RR interval (s) divided by breathing rate (1/s), i.e. s², not beats per breath. `hr` held the mean RR interval but was printed as "bps". | `Features.rotation_number` = heart rate / breathing rate. |
 | 2 | `c_process-data/calc_rsa.c` + `db.py` | The C loop fills `nr_beats - 1` rows; the last row stayed zero and passed the `> -998` filter, so every RSA dataset contained one spurious point (phase 0, RRI 0, time 0). | Vectorised NumPy implementation; no sentinel values. |
 | 3 | `c_process-data/calc_dfa.c` | Not DFA: the series was never integrated; the loop advanced `i` twice so every other window was skipped; the running sum was divided by N inside the loop; and `F[max_N - min_N]` was written one past the end of the buffer (heap overflow). | `features.dfa`: standard DFA (Peng et al. 1995). Checked on white noise (alpha = 0.5), a random walk (1.5), and real data (about 1.0 for young healthy subjects). |
-| 4 | `fit_model/cost_functions.py` `CF_rsa` | Compared the data's fitted RSA curve (sorted by phase) with the model's raw, unsorted RRI deviations element by element after decimating one array to the other's length. The two arrays were not aligned in phase, so the cost did not measure RSA mismatch. | `costs.cost_rsa`: Mahalanobis distance between the fitted Fourier coefficients, using the summed covariance of both estimates. |
+| 4 | `fit_model/cost_functions.py` `CF_rsa` | Compared the data's fitted RSA curve (sorted by phase) with the model's raw, unsorted RRI deviations element by element after decimating one array to the other's length. The two arrays were not aligned in phase, so the cost did not measure RSA mismatch. | `costs.cost_rsa`: Mahalanobis distance between the fitted Fourier coefficients, with the covariance of their difference. |
 | 5 | `cost_functions.py` `CF_cvc` | `Dmax` compared a CDF with the latency values themselves; the components were multiplied together; the rotation-number term was computed and then overwritten. | `costs.cost_cvc`: two-sample Kolmogorov-Smirnov statistic scaled by effective sample size, added to the RSA and breath-timing terms. Verified against `scipy.stats.ks_2samp`. |
 | 6 | `db.py` `calc_RSA` | `rri_var = (sum of parameter variances / Q²) / sqrt(n)` is not the variance of any quantity; `curve_fit` had no intercept and a hand-set sigma. | Ordinary least squares with intercept; covariance from the residuals; amplitude standard error by the delta method. A test confirms the standard errors are calibrated. |
 | 7 | `model/model_output.py` | `rri_times[rri_times > rri_dev.min()]` compared times with RRI deviations, and filtered the four arrays with different masks. | Removed; features come from one code path. |
@@ -111,15 +111,18 @@ bound of `0.0086` for `hr`, ten times the others; it looks like a typo for
 - Plausibility limits are applied uniformly: RR intervals 0.25-4 s, breaths
   1-10 s. (2018: RR <= 4 s for RSA, breaths <= 10 s for CVC only.)
 - Smoothing reflects at the edges instead of zero-padding.
-- The `.rng` artefact-free ranges are **now used by default**; the 2018
-  `compute_stats` loaded them but analysed the whole record. Pass
-  `use_ranges=False` (or `--no-ranges`) for the old behaviour.
+- The `.rng` files (epochs picked by eye with `select_epochs.py`) can be
+  applied with `use_ranges=True` / `--ranges`. As in 2018, the default
+  analyses the whole record: for several subjects the picked epochs cover
+  only a few minutes.
 - Features are saved as plain `.npz` arrays instead of pickled dicts.
 
 ### Cost functions (`pycardio/costs.py`)
 
-Every term is a squared difference over the variance of that difference,
-counting the uncertainty of both the data estimate and the model estimate.
+Every term is a squared difference over the variance that difference would
+have if the model had the recording's variability:
+`s_data² (1/n_data + 1/n_model)`. Both sample sizes count, but the spread is
+always the recording's, so a model cannot score better by being noisier.
 Terms add, and half the total is a Gaussian negative log-likelihood (the KS
 term is a distance, not a likelihood; this is stated in the code).
 
@@ -147,7 +150,7 @@ term is a distance, not a likelihood; this is stated in the code).
   replaces `build.sh`, `scripts/*.sh` and the scripts under `tests/`.
 - 2018 config files load unchanged (`pycardio/config.py` translates them and
   reports the keys it ignores).
-- 66 automated tests; GitHub Actions workflow replacing `.gitlab-ci.yml`.
+- 67 automated tests; GitHub Actions workflow replacing `.gitlab-ci.yml`.
 
 ## Removed files and where their function went
 
@@ -172,13 +175,21 @@ term is a distance, not a likelihood; this is stated in the code).
 
 Verified in this session:
 
-- All 66 tests pass; `ruff` is clean.
-- The loader and feature extraction ran on two real Fantasia records
-  (`f1y02`, `f2y03`) downloaded from PhysioNet.
-- A fit of `f2y03` using the unmodified 2018 config
-  `fantasia_f2y03_rsa_ga.json` ran end to end (cost 61,937 at the start point,
-  280 after 600 evaluations in 13 s; within 2 of that under three other noise
-  seeds).
+- All 67 tests pass locally and in CI (Python 3.10, 3.12, 3.13); `ruff` is clean.
+- All 40 Fantasia records were downloaded from PhysioNet and run through the
+  loader and feature extraction without a failure. Group medians come out as
+  expected from the literature (RSA amplitude about 31 ms in the young group
+  and 10 ms in the elderly group; DFA alpha-1 near 1).
+- A fit of `f2y03` (three cardiac parameters to the RSA feature, CMA-ES,
+  931 evaluations, 49 s) reproduces the recording's mean RR interval and RSA
+  amplitude and phase essentially exactly, and stays there under three other
+  noise seeds. Note what this is: three parameters matched to three numbers.
+  It shows the optimiser and cost work; it is not evidence that the model
+  explains the subject. Quantities that were not fitted do not match
+  (breathing rate 13.6 vs 17.4 per minute; the model shows almost no
+  cardioventilatory phase locking where the recording shows some).
+- The 2018 config `fantasia_f2y03_rsa_ga.json` loads and runs unmodified
+  through `pycardio fit`, `sample` and `plot`.
 
 Not verified:
 
@@ -186,18 +197,29 @@ Not verified:
   pipeline are not in the repository, the cost functions are different by
   design, and several original components did not run. Fitted parameter
   values from this code should not be expected to match 2018 values.
-- Only 2 of the 40 Fantasia subjects were run.
-- The remaining cost of 280 in the fit above is large for a chi-square-scaled
-  statistic. The model is nearly deterministic, so its feature uncertainties
-  are tiny and the cost is strict; I have not investigated whether wider
-  bounds, more free parameters or a model-discrepancy term is the right
-  response. Posterior widths from `pycardio sample` inherit this and will be
-  narrow.
+- Only one subject and one feature (`rsa`) have been fitted. The `cvc` and
+  `resp` fits, and MCMC beyond short smoke runs, are untested on real data.
 - RSA standard errors assume independent residuals. Successive RR intervals
-  are correlated, so on real data they are somewhat too small.
-- The Dockerfile was written but not built. (The GitHub Actions workflow has
-  run and passes on Python 3.10, 3.12 and 3.13.)
+  are correlated, so on real data they are somewhat too small, and posterior
+  widths from `pycardio sample` inherit that.
+- The Dockerfile was written but not built.
 - Windows and macOS builds are untested.
+
+## Two mistakes of mine, caught before release
+
+Both were found when the first all-subject run looked wrong, and both are
+fixed in the commits on this branch.
+
+1. **The first cost functions could be gamed.** They divided by the sum of the
+   data's and the *model's* squared standard errors. An optimiser can then
+   lower the cost by making the model noisier: the first example fit "won"
+   with an RSA of 158 ms against 20 ms in the recording. The variance now
+   always comes from the recording (see "Cost functions" above), and a test
+   pins this.
+2. **The `.rng` files were first applied by default** on my assumption that
+   they marked all artefact-free signal. They are epochs picked by eye, and
+   for some subjects cover only a few minutes (1.2 of 120 for `f2o05`). They
+   are opt-in again, as in 2018.
 
 ## A file I deleted by mistake
 

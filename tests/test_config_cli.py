@@ -78,7 +78,8 @@ def test_recording_features_handles_nans_and_ranges():
     np.testing.assert_allclose(f.duration, 390, atol=0.1)  # nothing before the gap is lost
     np.testing.assert_allclose(f.resp_rate, 0.25, rtol=0.03)
     rec.ranges = np.array([[0, int(100 * fs)]])
-    g = data.recording_features(rec)
+    assert not f.meta["used_ranges"]  # epochs are opt-in
+    g = data.recording_features(rec, use_ranges=True)
     np.testing.assert_allclose(g.duration, 100, atol=0.1)
     assert g.meta["used_ranges"]
 

@@ -1,11 +1,19 @@
 """Discrepancy measures between data features and model features.
 
 Each term is scaled like a chi-square statistic: a squared difference divided
-by the variance of that difference, where the variance combines the
-uncertainty of the data estimate *and* of the model estimate (both are
-averages over finite, noisy records). So ``0.5 * cost`` can be read as a
-Gaussian negative log-likelihood (the CVC term is the one exception; see
-:func:`cost_cvc`), and the terms can be added.
+by the variance that difference would have if the model produced data with the
+recording's statistics. Both estimates are averages over finite records, so
+both sample sizes count, but the *spread* is always taken from the recording:
+``var = s_data^2 * (1/n_data + 1/n_model)``.
+
+Taking the spread from the model as well (the obvious "sum of the two squared
+standard errors") is a trap: the optimiser can then lower the cost by making
+the model noisier instead of making it fit. An earlier version of this module
+did exactly that and produced a "best fit" with eight times the recording's
+RSA.
+
+``0.5 * cost`` can be read as a Gaussian negative log-likelihood (the CVC term
+is the one exception; see :func:`cost_cvc`), and the terms can be added.
 
 This replaces the 2018 cost functions, which compared RRI deviations
 element-wise between unaligned data and model arrays, divided by an
@@ -33,22 +41,15 @@ __all__ = [
 MIN_POINTS = 8
 
 
-def _mean_se(x: np.ndarray) -> tuple[float, float]:
-    n = x.size
-    if n < 2:
-        return float("nan"), float("nan")
-    return float(np.mean(x)), float(np.std(x, ddof=1) / np.sqrt(n))
-
-
 def _z2(data: np.ndarray, model: np.ndarray) -> float:
+    """Squared z-score of the difference in means, with the recording's spread."""
     if data.size < 2 or model.size < MIN_POINTS:
         return np.inf
-    md, sd = _mean_se(data)
-    mm, sm = _mean_se(model)
-    var = sd**2 + sm**2
+    diff = float(np.mean(data) - np.mean(model))
+    var = float(np.var(data, ddof=1)) * (1.0 / data.size + 1.0 / model.size)
     if not np.isfinite(var) or var <= 0:
-        return np.inf
-    return (md - mm) ** 2 / var
+        return 0.0 if diff == 0 else np.inf
+    return diff**2 / var
 
 
 def cost_rri(data: Features, model: Features) -> float:
@@ -70,7 +71,9 @@ def cost_rsa(data: Features, model: Features) -> float:
     if data.rsa is None or model.rsa is None or model.rsa.n < MIN_POINTS:
         return np.inf
     d = data.rsa.coef - model.rsa.coef
-    S = data.rsa.cov + model.rsa.cov
+    # covariance of the difference, with the recording's residual spread for
+    # both records: cov_data scales as 1/n, so the model's share is n_d/n_m of it
+    S = data.rsa.cov * (1.0 + data.rsa.n / model.rsa.n)
     # tiny ridge relative to the diagonal guards against a singular sum
     S = S + np.eye(3) * 1e-12 * max(np.trace(S), 1e-300)
     try:

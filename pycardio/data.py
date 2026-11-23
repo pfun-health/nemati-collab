@@ -8,9 +8,12 @@ Data directory layout: ``<data_dir>/fantasia/f1y01.hea``, ``.dat``, ``.ecg``.
 The default ``data_dir`` is ``$PYCARDIO_DATA_DIR`` or ``~/Public`` (the 2018
 default).
 
-Artefact-free stretches: ``<subject>.rng`` files list (start, end) sample
-ranges. They are looked up in the database folder first, then among the
-files shipped with the package (``pycardio/data/fantasia``).
+Selected epochs: ``<subject>.rng`` files list (start, end) sample ranges that
+were picked by eye in 2018 (``select_epochs.py``). For some subjects they cover
+almost the whole record, for others only a few minutes, so they are **not**
+applied unless asked for (``use_ranges=True``). They are looked up in the
+database folder first, then among the files shipped with the package
+(``pycardio/data/fantasia``).
 """
 
 from __future__ import annotations
@@ -119,7 +122,7 @@ def _finite_runs(mask: np.ndarray, min_len: int) -> list[tuple[int, int]]:
 def recording_features(
     rec: Recording,
     smooth_window: float = 1.0,
-    use_ranges: bool = True,
+    use_ranges: bool = False,
     min_segment: float = 30.0,
 ) -> Features:
     """Features of a recording.
@@ -136,7 +139,9 @@ def recording_features(
         for a, b in rec.ranges:
             allowed[max(a, 0) : min(b, finite.size)] = True
         finite &= allowed
-    runs = _finite_runs(finite, int(min_segment * rec.fs))
+    using = use_ranges and rec.ranges is not None
+    # hand-picked epochs can be short; keep any that hold a few breaths
+    runs = _finite_runs(finite, int((10.0 if using else min_segment) * rec.fs))
     if not runs:
         raise ValueError(f"{rec.subject}: no clean segment of at least {min_segment} s")
     resp = np.full_like(rec.resp, np.nan)

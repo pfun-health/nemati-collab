@@ -64,7 +64,7 @@ def cmd_features(a):
             a.database,
             a.data_dir,
             refresh=a.refresh,
-            **({} if a.ranges else {"use_ranges": False}),
+            **({"use_ranges": True} if a.ranges else {}),
         )
         table[s] = f.summary() | {"meta": f.meta}
     _dump(table, Path(a.out) if a.out else None)
@@ -188,7 +188,7 @@ def build_parser() -> argparse.ArgumentParser:
     sp = sub.add_parser("features", help="compute and print features of recordings")
     sp.add_argument("subjects", nargs="*", help="subject IDs (default: all)")
     sp.add_argument(
-        "--no-ranges", dest="ranges", action="store_false", help="ignore .rng artefact-free ranges"
+        "--ranges", action="store_true", help="analyse only the hand-picked epochs in .rng files"
     )
     sp.add_argument("--refresh", action="store_true", help="recompute cached features")
     sp.add_argument("--out", help="write JSON here instead of stdout")
