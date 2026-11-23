@@ -140,7 +140,7 @@ term is a distance, not a likelihood; this is stated in the code).
 
 - `wfdb==1.3.7` (2018) replaced by current `wfdb`, which removes the pins on
   `numpy<2`, `pandas<2`, `scipy<1.14`. Tested on NumPy 2.4 / SciPy 1.17 / Python
-  3.11 (CI is set up for 3.10, 3.12 and 3.13 but has not run yet).
+  3.11 locally and 3.10, 3.12, 3.13 in CI.
 - `google-cloud-storage` dropped: `_zip_db.py` only listed blobs in a
   `sepsis-data` bucket and was otherwise commented out.
 - One CLI (`pycardio download | features | simulate | fit | sample | plot`)
@@ -195,7 +195,8 @@ Not verified:
   narrow.
 - RSA standard errors assume independent residuals. Successive RR intervals
   are correlated, so on real data they are somewhat too small.
-- The Dockerfile and the GitHub Actions workflow were written but not run.
+- The Dockerfile was written but not built. (The GitHub Actions workflow has
+  run and passes on Python 3.10, 3.12 and 3.13.)
 - Windows and macOS builds are untested.
 
 ## A file I deleted by mistake
