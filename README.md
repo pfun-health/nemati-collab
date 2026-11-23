@@ -1,129 +1,159 @@
-# nemati-collab
+# nemati-collab / pycardio
 
-**Note:** This repository is from 2017 when I worked in the Molkov Lab, Neuroscience Institute, Georgia State University; I updated it recently (November, 2026) to make sure the code still runs. Obligatory AI disclaimer: I used Claude Code when performing the recent updates--- limited to aesthetic, ease-of-use.
+Model-based analysis of cardiorespiratory coupling: a neural model of the
+respiratory central pattern generator coupled to heart rate and blood
+pressure, fitted to respiratory sinus arrhythmia (RSA) and cardioventilatory
+coupling (CVC) measured in human recordings (PhysioNet Fantasia).
 
-## Summary & Objectives
+> **History.** The model and analysis were written in 2017-2018 in the Molkov
+> Lab, Neuroscience Institute, Georgia State University. In November 2026 the
+> code was overhauled with Claude Code: the model equations, parameter values
+> and feature definitions are the original ones; the numerics, statistics,
+> packaging and tests around them were rewritten. [CHANGES-AI.md](CHANGES-AI.md)
+> lists exactly what is original, what was changed and why, and what has not
+> been verified. The pre-overhaul code is commit `bad301d`.
 
-### Objectives
+## Install
 
-Elucidate the cardiorespiratory circuitry underlying autonomic control of breathing, blood pressure, heart rate. This repository includes code related to analysis and model-fitting. The sample configurations are for the sample dataset I used (PhysioNet, Fantasia ECG dataset).
-
-### Code Summary
-
-The repository contains the latest version of the cardiovascular model (implemented in C) and optimized data processing code written in C. The model optimization module (fit_model) is accessible from Python.
-
-## Example scripts
-
-#### Produce model output file (.npy format) for subject 'f1y02':
-```bash
-$ python3 tests/test_model.py f1y02
-```
-
-#### Produce a CVC synchrogram plot:
-```bash
-$ python3 phase_time_plot.py
-```
-
-## Installation
-
-### Dependencies
-
-- Python >=3.5,<3.12 (developed with 3.6.5)
-- wfdb-python == 1.3.7
-
-#### [extra] Required for model optimization
-
-- GNU Scientific Library (GSL) >= 2.0 (developed with 2.4)
-
-### Install steps
-
-First, install all the dependencies.
-
-1. Change the "LIB_PATH" variable in the config file that you want (./config/*.json) so that it points to the git repository. See the config/ directory for examples.
-
-2. Change the "path" variable in the config file so that it points to the location of the dataset. See the config/ directory for examples.
-
-3. Set the "database" variable in the config file (probably 'fantasia').
-
-4. Set any other variables in the config file so that they do what you want. See the examples below for an idea of what variables you might change.
-
-5. Build the C sources by running the build script. Check for errors.
-
-6. Install the python package using `uv`.
+Requirements: Python 3.10+ and a C compiler. Nothing else (GSL and the WFDB C
+library are no longer needed).
 
 ```bash
-
-$ uv sync
-
+uv sync            # or: pip install -e .
+uv run pytest      # 67 tests, about a minute
 ```
 
-To get started, run the scripts as in the examples below.
+## Quick start
 
-## Example usage
-
-### Test the model
 ```bash
+# 1. Get the data (about 650 MB) into ~/Public/fantasia
+uv run pycardio download
 
-rocapp@ubuntu-server:~/Git/nemati-collab$ python3 tests/test_model.py
+# 2. Features of a recording
+uv run pycardio features f1y02
 
+# 3. Run the model
+uv run pycardio simulate -p hr=0.0009 -p rsa1=0.0006 --plot figs/traces.png
+
+# 4. Fit the model to a subject (2018 config files work as they are)
+uv run pycardio fit config/fantasia_f2y03_rsa_ga.json --method cmaes --maxfev 1500
+
+# 5. Posterior sampling around the fit, and figures
+uv run pycardio sample config/fantasia_f2y03_rsa_ga.json --start-from results/fit_f2y03_rsa.json
+uv run pycardio plot f2y03 --fit results/fit_f2y03_rsa.json
 ```
 
-### Print the help message for the optimization test
-```bash
+Results for all 40 recordings and an example fit are shown at
+<https://pfun.one/examples/physionet-fantasia>; its data file is produced by
+`examples/fantasia_dashboard_data.py`.
 
-rocapp@ubuntu-server:~/Git/nemati-collab$ python3 tests/test_optimize_mp.py help
+Data location: `--data-dir`, else `$PYCARDIO_DATA_DIR`, else `~/Public`; the
+database folder (`fantasia/`) is expected inside it.
 
-Usage:
+From Python:
 
-  python3 tests/test_optimize_mp.py [args]
-
-Args:
-
-  subject_name : f1y02
-  opt_feature : rsa
-  method : basinhopping
-  tol : 1e-05
-  simtime : 60
-  nr_p : 2
-  T : 0.5
-  stepsize : 1e-06
-  niter : 10000
-  niter_success : 1500
-  interval : 10
-
-
-```
-
-### Run the optimization test
-```bash
-
-rocapp@ubuntu-server:~/Git/nemati-collab$ python3 tests/test_optimize_mp.py config config/fantasia_f1y02_rsa.json
-
-```
-
-### Load statistics for all subjects
 ```python
+import pycardio as pc
 
-import pycardio as pycard
-stats = pycard.load_data.load_all_stats(database='fantasia', path='/home/rocapp/Public')
-averages = pycard.process_data.get_averages(stats)
+data = pc.subject_features("f1y02")               # features of a recording
+print(data.summary())
 
+sim = pc.simulate({"hr": 0.0009}, duration=120, transient=10, seed=0)
+model = sim.features()                             # the same features from the model
+pc.total_cost(data, model, "rsa")                  # chi-square-scaled mismatch
+
+problem = pc.FitProblem(
+    data,
+    free={"hr": (0.0006, 0.0012), "rsa1": None, "rsa2": None},   # None -> default bounds
+    feature="rsa",
+    fixed={"d2": 0.62, "d4": 0.43},
+)
+fit = pc.fit(problem, method="cmaes", maxfev=1500)
+chains = pc.sample(problem, start=problem.to_unit(list(fit.params.values())))
+print(fit.params, chains.summary())
 ```
 
-## Package structure
+## What it computes
 
-### The package is structured like so:
+**Model** (`pycardio/_c/model.c`). Five neural populations (pre-I/I, early-I,
+aug-E, post-I, ramp-I) with persistent-sodium and adaptation currents generate
+the breathing rhythm; ramp-I drives lung volume; post-I and ramp-I modulate a
+heart-phase oscillator (RSA); each heartbeat injects a pulse into a lumped
+blood-pressure variable, which feeds back to post-I and the heart
+(baroreflex). Thirteen state variables, 57 parameters (`pc.PARAM_DOCS`), time
+in ms. Noise enters through the early-I adaptation.
 
-```bash
-nemati-collab/          ||      "Top-level repository directory"
-├── scripts             ||      "Stand-alone scripts (these are for development use only)"
-├── pycardio            ||      "The pycardio package source directory"
-│   ├── c_fit-model     ||      "C source files for optimization and sampling procedures (e.g. CMAES)"
-│   ├── c_model         ||      "C source files for integrating the ODE-based cardiovascular model"
-│   ├── c_process-data  ||      "C implementation of data processing functions"
-│   ├── fit_model       ||      "Python module for fitting the model parameters to physiological data"
-│   ├── load_data       ||      "Python module for loading physiological data"
-│   ├── model           ||      "Python wrapper to instantiate the model (accesses c_model)"
-│   └── process_data    ||      "Python data processing module (accesses c_process-data)"
-└── tests               ||      "Tests of various features"
+**Features** (`pycardio/features.py`), identical for data and model:
+
+| Feature | Definition |
+|---|---|
+| `rri` | RR intervals |
+| `resp` | inspiration (trough to peak) and expiration (peak to trough) durations |
+| `rsa` | RR interval vs respiratory phase from expiration onset, fitted with `c + A cos 2πφ + B sin 2πφ` |
+| `cvc` | distribution of heartbeat phase within the breath from inspiration onset |
+| also | heart rate, breathing rate, rotation number (beats per breath), DFA α₁ |
+
+**Cost** (`pycardio/costs.py`). Squared differences divided by the variance the
+difference would have if the model had the recording's variability (both
+sample sizes count; the spread always comes from the recording): z-scores for `rri` and
+`resp`, a Mahalanobis distance on the Fourier coefficients for `rsa`, and a
+two-sample Kolmogorov-Smirnov statistic plus the `rsa` and `resp` terms for
+`cvc`.
+
+**Fitting** (`pycardio/fitting.py`, `cmaes.py`, `mcmc.py`). CMA-ES (default),
+differential evolution, Nelder-Mead or Powell on bound-normalised parameters,
+with a fixed noise seed so the objective is deterministic; adaptive Metropolis
+MCMC with R-hat and effective sample size for uncertainty.
+
+## Config files
+
+```json
+{
+  "subject": "f1y02",
+  "feature": "rsa",
+  "method": "cmaes",
+  "free":  {"hr": [0.00075, 0.0009], "rsa1": null, "rsa2": null},
+  "start": {"hr": 0.00077},
+  "fixed": {"d2": 0.62, "d4": 0.43},
+  "duration": 120, "transient": 10, "seed": 0, "maxfev": 2000,
+  "mcmc": {"n_samples": 2000, "n_warmup": 1000, "n_chains": 4}
+}
 ```
+
+The 2018-format files in `config/` are translated on load; keys with no
+equivalent (`LIB_PATH`, `nr_p`, `tol`, ...) are reported and ignored.
+
+## Layout
+
+```
+pycardio/
+├── _c/model.c, model_params.h   the model and its integrator (C, no dependencies)
+├── model.py                      simulate(), parameters, Simulation
+├── features.py                   RSA, CVC, breath timing, DFA
+├── costs.py                      data-model discrepancy
+├── cmaes.py, fitting.py          optimisation
+├── mcmc.py                       posterior sampling
+├── data.py                       PhysioNet loading, hand-picked epochs, caching
+├── config.py, cli.py, plotting.py
+└── data/fantasia/*.rng           hand-picked epochs per subject (opt-in)
+config/                           run configurations (2018 format, still readable)
+tests/                            pytest suite (no dataset needed)
+```
+
+## Limitations
+
+See the "What has and has not been verified" section of
+[CHANGES-AI.md](CHANGES-AI.md). In short: no 2018 result has been reproduced
+with the new code, and only one subject has been fitted (three parameters
+to three RSA numbers, which shows the machinery works, not that the model
+explains the subject).
+
+## Data and references
+
+- Iyengar N. et al. (1996), Fantasia database, PhysioNet,
+  <https://physionet.org/content/fantasia/>.
+- Hansen N. (2016), *The CMA Evolution Strategy: A Tutorial*, arXiv:1604.00772.
+- Haario H., Saksman E., Tamminen J. (2001), *An adaptive Metropolis
+  algorithm*, Bernoulli 7(2).
+- Peng C.-K. et al. (1995), *Quantification of scaling exponents and crossover
+  phenomena in nonstationary heartbeat time series*, Chaos 5(1).
