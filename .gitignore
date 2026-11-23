@@ -270,3 +270,8 @@ pyrightconfig.json
 
 # End of https://www.toptal.com/developers/gitignore/api/emacs,python,bash
 
+
+# pycardio outputs
+results/
+figs/
+*.features.npz
