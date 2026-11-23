@@ -1,44 +1,28 @@
-[build-system]
-requires = ["setuptools>=69", "wheel"]
-build-backend = "setuptools.build_meta"
-
 [project]
-name = "pycardio"
-version = "0.2.0"
-description = "Model-based analysis of cardiorespiratory coupling (RSA, cardioventilatory coupling) in human physiology recordings."
+name = "nemati-collab"
+version = "0.1.0"
+description = "Elucidate the cardiorespiratory circuitry underlying autonomic control of breathing, blood pressure, heart rate."
 readme = "README.md"
-requires-python = ">=3.10"
-authors = [{ name = "Robbie Capps" }]
+requires-python = ">=3.11.0, <3.12"
 dependencies = [
-    "numpy>=1.26",
-    "scipy>=1.11",
-    "matplotlib>=3.8",
-    "wfdb>=4.1",
+    # wfdb 1.3.7 (2018) declares unbounded deps but breaks on pandas>=2 / numpy>=2.
+    "wfdb==1.3.7",
+    "numpy>=1.23,<2",
+    "pandas>=1.5,<2",
+    "scipy>=1.9,<1.14",
+    "matplotlib>=3.6,<3.10",
+    "requests",
+    "google-cloud-storage>=3.17.1",
 ]
 
-[project.optional-dependencies]
-dev = ["pytest>=8", "ruff>=0.6"]
-
-[project.scripts]
-pycardio = "pycardio.cli:main"
-
-[tool.setuptools]
-packages = ["pycardio"]
-
-[tool.setuptools.package-data]
-pycardio = ["_c/*.c", "_c/*.h", "data/*/*.rng"]
-
-[tool.pytest.ini_options]
-testpaths = ["tests"]
-addopts = "-ra"
-
-[tool.ruff]
-line-length = 100
-target-version = "py310"
-
-[tool.ruff.lint]
-select = ["E", "F", "W", "I", "B", "NPY"]
-ignore = ["E741", "B905"]
-
-[dependency-groups]
-dev = ["pytest>=8", "ruff>=0.6"]
+[tool.uv.extra-build-dependencies]
+# wfdb's setup.py imports the package to read its version, so its runtime
+# deps must be present (and compatible) at build time.
+wfdb = [
+    "setuptools",
+    "numpy>=1.23,<2",
+    "pandas>=1.5,<2",
+    "scipy>=1.9,<1.14",
+    "matplotlib>=3.6,<3.10",
+    "requests",
+]

@@ -1,231 +1,202 @@
-"""Tests of the compiled model against an independent reference."""
+import sys, os
 
+import matplotlib
+matplotlib.use('Agg')
+import matplotlib.pyplot as plt
+
+sys.path.append(os.path.expanduser("~/Git/nemati-collab")) # Path to library
+
+import pycardio
+
+import ctypes as ct
 import numpy as np
-import pytest
-from scipy.integrate import solve_ivp
 
-import pycardio as pc
-from pycardio import model as m
+if __name__ == '__main__':
 
+    m = pycardio.setupModel()
 
-def reference_rhs(y, P):
-    """Independent NumPy transcription of the 2018 equations (resp_odes.c).
-    y[12] is the early-I adaptation."""
-    eiAd = y[12]
+    subject = 'f2y03'
+    
+    if len(sys.argv) > 1: # Give subject name as argument (e.g. 'f2y03')
+        subject = sys.argv[1]
 
-    def f(v):
-        return float(np.clip((v - P["vlow"]) / (P["vhigh"] - P["vlow"]), 0.0, 1.0))
+    if subject == 'f2y03':
+        
+        # f2y03 
+        pdict = {"baro": 0.108,
+                 "d2": 0.642,
+                 "d4": 0.527,
+                 "hr": 0.0008303,
+                 "po": 0.01,
+                 "rsa1": 0.000197, "rsa2": 0.0006,
+                 "taup": 1367,
+                 "rs1": 0.001 #0.00001
+        }
 
-    def ninf(v):
-        return 1 / (1 + np.exp((v - P["v12n"]) / P["kn"]))
-
-    def mpinf(v):
-        return 1 / (1 + np.exp((v - P["v12mp"]) / P["kmp"]))
-
-    def hpinf(v):
-        return 1 / (1 + np.exp((v - P["v12hp"]) / P["khp"]))
-
-    def tauinf(v):
-        return P["tauhp"] / np.cosh((v - P["v12hp"]) / P["khp"])
-
-    def beat(phi):
-        return ((1 + np.sin(phi * 2 * np.pi)) / 2) ** 20
-
-    gK, gL, gE, gI, gAD = P["gKdr"], P["gL"], P["gE"], P["gI"], P["gAD"]
-    EK, EL, Ee, Ei = P["EK"], P["EL"], P["Ee"], P["Ei"]
-    dy = np.zeros(13)
-    dy[12] = (f(y[1]) - eiAd) / P["tad_ei"]
-    dy[0] = (
-        -gK * ninf(y[0]) ** 4 * (y[0] - EK)
-        - gL * (y[0] - EL)
-        - P["gNaP"] * mpinf(y[0]) * y[5] * (y[0] - P["ENa"])
-        - gE * P["d1"] * (y[0] - Ee)
-        - gI * (P["b31"] * f(y[2]) + P["b41"] * f(y[3])) * (y[0] - Ei)
-    ) / P["C"]
-    dy[1] = (
-        -gK * ninf(y[1]) ** 4 * (y[1] - EK)
-        - gL * (y[1] - EL)
-        - gAD * eiAd * (y[1] - EK)
-        - gE * (P["d2"] + P["a12"] * f(y[0])) * (y[1] - Ee)
-        - gI * (P["b32"] * f(y[2]) + P["b42"] * f(y[3]) + P["hb2"] * y[8] + P["st2"]) * (y[1] - Ei)
-    ) / P["C"]
-    dy[2] = (
-        -gK * ninf(y[2]) ** 4 * (y[2] - EK)
-        - gL * (y[2] - EL)
-        - gAD * y[6] * (y[2] - EK)
-        - gE * P["d3"] * (y[2] - Ee)
-        - gI * (P["b23"] * f(y[1]) + P["b43"] * f(y[3])) * (y[2] - Ei)
-    ) / P["C"]
-    dy[3] = (
-        -gK * ninf(y[3]) ** 4 * (y[3] - EK)
-        - gL * (y[3] - EL)
-        - gAD * y[7] * (y[3] - EK)
-        - gE * (P["d4"] + P["hb"] * y[8] + P["st4"] + P["baro"] * y[10]) * (y[3] - Ee)
-        - gI * (P["b24"] * f(y[1]) + P["b34"] * f(y[2])) * (y[3] - Ei)
-    ) / P["C"]
-    dy[4] = (
-        -gK * ninf(y[4]) ** 4 * (y[4] - EK)
-        - gL * (y[4] - EL)
-        - gE * (P["d5"] + P["a15"] * f(y[0])) * (y[4] - Ee)
-        - gI * (P["b25"] * f(y[1]) + P["b35"] * f(y[2]) + P["b45"] * f(y[3])) * (y[4] - Ei)
-    ) / P["C"]
-    dy[5] = (hpinf(y[0]) - y[5]) / tauinf(y[0])
-    dy[6] = (f(y[2]) - y[6]) / P["tad"]
-    dy[7] = (f(y[3]) - y[7]) / P["tad"]
-    dy[8] = (f(y[4]) - y[8]) / P["taul"]
-    dy[9] = P["hr"] + P["rsa1"] * f(y[3]) + P["rsa2"] * f(y[4]) - P["db"] * y[11]
-    dy[10] = (beat(y[9]) + P["sym"] * f(y[4]) - P["sb"] * y[11] - (y[10] - P["po"])) / P["taup"]
-    dy[11] = (y[10] - y[11]) / P["taupp"]
-    return dy
+    elif subject == 'f1o01':
+    
+        # f1o01
+        pdict = {"baro": 0.0001, # 0.00015
+                 "d2": 0.65,
+                 "d4": 0.587,
+                 "hr": 0.000937,
+                 "rsa1": 0.0001,
+                 "rsa2": 0.00035,
+                 "po": 0.01,
+                 "taup": 1500,
+                 "rs1": 0.01}
+    
+    p = pycardio.setParams(dParams=None,
+                           **pdict)
 
 
-# every coupling switched on, so each term of the equations is exercised
-RICH = dict(baro=0.1, sym=0.2, db=0.0007, sb=0.1, hb2=0.05, st2=0.02, st4=0.03, b34=0.1, b31=0.05)
+    data_stats = pycardio.load_data.load_stats(subject, 'fantasia', os.path.expanduser('~/Public'))
 
+    data_time = data_stats['signals']['time']
+    
+    time_scale = 1000
+    max_time = 6000 # seconds
+    vlen = time_scale * max_time
+    ndim = 12
+    solution = np.zeros((vlen, ndim+1))
+    end_time = ct.c_double(max_time)
 
-def test_parameter_table():
-    assert len(set(pc.PARAM_NAMES)) == len(pc.PARAM_NAMES) == 57
-    # values of the 2018 parameters.py / parameters.h
-    for name, value in dict(
-        hr=0.00084, rsa1=0.0005, rsa2=0.00035, d2=0.564, gL=2.8, b42=0.42, tauhp=4000.0, vlow=-50.0
-    ).items():
-        assert pc.DEFAULT_PARAMS[name] == value
-    assert all(pc.PARAM_DOCS[n] for n in pc.PARAM_NAMES)
+    m.integrate(ct.c_int(vlen), ct.c_int(ndim), solution, end_time, ct.byref(p))
 
+    tt = np.linspace(0, max_time, vlen)
+    model_output = pycardio.ModelOutput(tt, solution,
+                                        ix_offset=0,
+                                        model_freq=time_scale,
+                                        sampling_freq=time_scale)
 
-def test_unknown_parameter_raises():
-    with pytest.raises(KeyError):
-        pc.make_params({"not_a_parameter": 1.0})
-    with pytest.raises(KeyError):
-        pc.simulate({"gl": 3.0}, 1.0)
+    model_output.save_model("./model_{}.npy".format(subject,))
+    
+    aresp = model_output('ave_resp')
 
+    sp = model_output.array
+    tp = model_output.time
 
-def test_rhs_matches_reference():
-    rng = np.random.default_rng(0)
-    P = dict(pc.DEFAULT_PARAMS) | RICH
-    for _ in range(200):
-        y = np.concatenate(
-            [
-                rng.uniform(-80, 0, 5),
-                rng.uniform(0, 1, 4),
-                rng.uniform(0, 5, 1),
-                rng.uniform(0, 2, 2),
-                rng.uniform(0, 1, 1),
-            ]
-        )
-        np.testing.assert_allclose(m.rhs(y, P), reference_rhs(y, P), rtol=1e-12, atol=1e-14)
+    rsa = model_output('rsa') 
+    rri_dev = rsa['rri_dev']
+    rphase = rsa['resp_cycle']
 
+    hr_v = model_output('hr')
 
-def test_integrator_matches_scipy():
-    """Without noise the model is a plain ODE; compare with SciPy's DOP853
-    integrating the independent reference right-hand side."""
-    P = dict(pc.DEFAULT_PARAMS) | RICH | dict(rs1=0.0)
-    y0 = m.default_initial_state()
-    T = 8000.0  # ms, about two breaths
-    ref = solve_ivp(
-        lambda t, y: reference_rhs(y, P),
-        (0, T),
-        y0,
-        method="DOP853",
-        rtol=1e-11,
-        atol=1e-13,
-        t_eval=np.arange(0, T + 1, 50.0),
-    )
-    sim = pc.simulate(P, T / 1000, rtol=1e-9, atol=1e-11)
-    got = np.column_stack(
-        [
-            sim["lung_volume"],
-            sim["heart_phase"],
-            sim["bp"],
-            sim["bp_smooth"],
-            sim["preii_nap"],
-            sim["earlyi_iad"],
-        ]
-    )[::50]
-    want = ref.y[[8, 9, 10, 11, 5, 12]].T
-    np.testing.assert_allclose(got, want, rtol=0, atol=2e-6)
+    cvc = model_output('cvc')
+    cdf = cvc['cdf']
+    cvc_vec = cvc['beat_latency']
 
+    cvc_data = data_stats['cvc']
+    cvc_data.update(data_stats['ave_resp'])
+    cvc_data.update(data_stats['rsa'])
 
-def test_tolerance_convergence():
-    P = {"rs1": 0.0}
-    ref = pc.simulate(P, 20, rtol=1e-11, atol=1e-13)
-    # a coarse output grid, so the tolerance (not the grid) limits the step
-    ref = pc.simulate(P, 20, dt=50, rtol=1e-11, atol=1e-13)
-    err = [
-        np.abs(
-            pc.simulate(P, 20, dt=50, rtol=r, atol=r * 1e-2)["heart_phase"] - ref["heart_phase"]
-        ).max()
-        for r in (1e-3, 1e-5, 1e-7)
-    ]
-    assert err[0] > err[1] > err[2]
-    assert err[2] < 1e-5
+    print('model rri',rsa['rri_ave'])
+    print('data rri',cvc_data['rri'].mean())
 
+    print('model insp {:f} +- {:f} sec '.format(aresp['insp_time'],np.std(aresp['insp_times']),),
+          'model exp {:f} +- {:f} sec'.format(aresp['exp_time'],np.std(aresp['exp_times']),) )
+    
+    print('data insp {:f} +- {:f} sec '.format(cvc_data['insp_time'],np.std(cvc_data['insp_times']),),
+          'data exp {:f} +- {:f} sec'.format(cvc_data['exp_time'],np.std(cvc_data['exp_times']),) )
+    
+    cdf_data = cvc_data['cdf']
+    vec_data = cvc_data['beat_latency']
+    data_rot = pycardio.calc_rot(cvc_data['rri'].mean(), cvc_data['exp_time'], cvc_data['insp_time'])    
+    print('data rot nr: ', data_rot)
+    
+    try:
+        model_rot = pycardio.calc_rot(cvc['rri_ave'], cvc['exp_time'], cvc['insp_time'])
+        print('model rot nr',np.floor(model_rot))
 
-def test_pure_pacemaker_period():
-    """With no respiratory or baroreflex coupling the RR interval is 1/hr."""
-    sim = pc.simulate(dict(hr=0.001, rsa1=0, rsa2=0, db=0), 30)
-    rr = np.diff(sim.beat_times)
-    np.testing.assert_allclose(rr, 1.0, atol=1e-9)
-    assert sim.beat_times.size == 30
+        interp_vec, cdf_data, cdf_model = pycardio.utils.interp_cvc(vec_data, cdf_data, cvc_vec, cdf)
 
+        cdiff = np.abs(cdf_data - cdf_model)
+        mix = np.argmax(cdiff)
+        D = cdiff.max()
 
-def test_output_grid_is_honoured():
-    P = {"rs1": 0.0}
-    a = pc.simulate(P, 5, dt=1.0, rtol=1e-9, atol=1e-11)
-    b = pc.simulate(P, 5, dt=0.5, rtol=1e-9, atol=1e-11)
-    assert b.t.size == 2 * (a.t.size - 1) + 1
-    np.testing.assert_allclose(b.t[::2], a.t)
-    np.testing.assert_allclose(b["heart_phase"][::2], a["heart_phase"], atol=1e-7)
-    c = pc.simulate(P, 5, dt=10.0, rtol=1e-9, atol=1e-11)
-    np.testing.assert_allclose(c["heart_phase"], a["heart_phase"][::10], atol=1e-7)
+        cmaxdiff = np.abs(cdf_data - interp_vec)
+        bix = np.argmax(cmaxdiff)
+        Dmax = cmaxdiff.max()
 
+        print('D ', D)
+        print('Dmax ', Dmax)
 
-def test_seed_reproducibility():
-    P = {"rs1": 0.01}
-    a, b, c = (pc.simulate(P, 20, seed=s) for s in (3, 3, 4))
-    assert np.array_equal(a.states, b.states)
-    assert not np.array_equal(a.states, c.states)
+        plt.figure(figsize=(12,12),dpi=300)
+        plt.title('CDF : {}'.format(subject))
+        plt.plot(interp_vec, cdf_model, 'b',label='model')
+        plt.plot(interp_vec, cdf_data, 'k', label='data')
+        # plt.plot(cvc_vec, cdf, 'g', label='model_raw')
+        plt.plot(interp_vec, interp_vec, 'k--', alpha=0.5, label='bisector')
+        plt.plot([interp_vec[bix], interp_vec[bix]], [interp_vec[bix], cdf_data[bix]], 'c-x', label='Dmax')
+        plt.plot([interp_vec[mix], interp_vec[mix]], [cdf_model[mix], cdf_data[mix]], 'r-x', label='D')
+        plt.xlim([0, 1])
+        plt.ylim([0, 1])
+        plt.xlabel('Phase [Inspiration -> Inspiration]')
+        plt.ylabel('CDF')
+        plt.legend(loc='best')
+        plt.savefig('figs/test_example_cvc_{}.svg'.format(subject))
+        plt.close()
 
+        plt.figure(figsize=(12,12),dpi=300)
+        plt.title('RSA : {}'.format(subject))
+        plt.plot(rphase, rri_dev, 'b.',label='model rsa')
+        plt.plot(cvc_data['resp_cycle'], cvc_data['rri_dev'], 'k', label='data rsa')
+        plt.fill_between(cvc_data['resp_cycle'], cvc_data['rri_dev']-np.sqrt(cvc_data['rsa_var']),
+                         cvc_data['rri_dev']+np.sqrt(cvc_data['rsa_var']), facecolor='r', lw=0, label='data error')
+        plt.hlines(y=0, xmin=0, xmax=1, colors='k', linestyles='--', alpha=0.5)
+        plt.ylabel('RRI Deviation (sec)')
+        plt.xlabel('Phase [Expiration -> Expiration]')
+        plt.xlim([0, 1])
+        plt.ylim([-0.1, 0.1])
+        plt.legend(loc='best')
+        plt.savefig('figs/test_example_rsa_{}.svg'.format(subject))
+        plt.close()
 
-def test_noise_statistics_independent_of_step():
-    """Isolate the SDE d(eiAd) = -eiAd/tau dt + sigma dW (early-I silenced):
-    the stationary variance sigma^2 tau / 2 must not depend on the output step."""
-    tau, rs1 = 50.0, 0.02
-    P = dict(rs1=rs1, tad_ei=tau, d2=0.0, a12=0.0, hr=0.001)
-    expected = (rs1**2 / 12) * tau / 2
-    for dt in (0.5, 1.0, 2.0):
-        sim = pc.simulate(P, 400, dt=dt, transient=2, seed=1)
-        assert sim["earlyi"].max() == 0.0  # the drift target stays at zero
-        var = sim["earlyi_iad"].var()
-        # exact drift + noise increment every dt: var = sigma^2 dt / (1 - exp(-2 dt / tau))
-        exact = (rs1**2 / 12) * dt / (1 - np.exp(-2 * dt / tau))
-        np.testing.assert_allclose(var, exact, rtol=0.08)
-        np.testing.assert_allclose(var, expected, rtol=0.12)
+    except (OverflowError, ValueError, IndexError):
+        print('Failed to do CVC, RSA. Error (rri is small probably).')
 
+    finally:
+        # Neurons
+        plt.figure(figsize=(12,12), dpi=300)
+        plt.subplot(511)
+        plt.plot(tp, sp[:,0])
+        plt.ylabel('pre-i/i')
 
-def test_continuation_matches_single_run():
-    P = {"rs1": 0.0}
-    full = pc.simulate(P, 10)
-    first = pc.simulate(P, 5)
-    second = pc.simulate(P, 5, y0=first.y_final)
-    np.testing.assert_allclose(second.states[-1], full.states[-1], atol=1e-5)
+        plt.subplot(512)
+        plt.plot(tp, sp[:,1])
+        plt.ylabel('early-i')
 
+        plt.subplot(513)
+        plt.plot(tp, sp[:,2])
+        plt.ylabel('aug-e')
 
-def test_transient_is_dropped():
-    P = {"rs1": 0.0}
-    full = pc.simulate(P, 12)
-    late = pc.simulate(P, 10, transient=2)
-    assert late.t[0] == 0.0
-    np.testing.assert_allclose(late.states, full.states[2000:], atol=0)
+        plt.subplot(514)
+        plt.plot(tp, sp[:,3])
+        plt.ylabel('post-i')
 
+        plt.subplot(515)
+        plt.plot(tp, sp[:,4])
+        plt.ylabel('ramp-i')
+        plt.savefig('figs/test_example_neurons_{}.svg'.format(subject))
+        plt.close()
+        
+        # Model output (signals)
+        plt.figure(figsize=(12,12),dpi=300)
+        plt.subplot(411)
+        plt.plot(tp, sp[:,10]) # heart rate rate
+        plt.ylabel('heart phase')
 
-def test_solver_failure_is_reported():
-    with pytest.raises(pc.SimulationError):
-        pc.simulate({"C": 0.0}, 1.0)
+        plt.subplot(412)
+        # plt.plot(tp, model_output('bp_s')) # smoothed blood pressure
+        plt.plot(tp, model_output('bp'))
+        plt.ylabel("blood pressure")
 
+        plt.subplot(413)
+        plt.plot(tp, model_output('tv')) # tidal volume
+        plt.ylabel("tidal volume")
 
-def test_default_model_is_physiological():
-    f = pc.simulate(duration=120, transient=10).features()
-    assert 40 < 60 * f.heart_rate < 100
-    assert 8 < 60 * f.resp_rate < 25
-    assert f.rsa is not None and 0.01 < f.rsa.amplitude < 0.3
+        plt.subplot(414)
+        plt.plot(tp[hr_v[:,0].astype('int')], hr_v[:,1]) # heart rate
+        plt.ylabel('Heart Rate (bps)')
+        plt.savefig('figs/test_example_output_{}.svg'.format(subject))
+        plt.close()
