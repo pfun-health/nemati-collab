@@ -117,8 +117,10 @@ def main() -> None:
     subjects, feats, failed = [], {}, {}
     for name in pc.list_subjects("fantasia", a.data_dir):
         try:
-            feats[name] = pc.subject_features(name, "fantasia", a.data_dir)
-            subjects.append(subject_entry(name, feats[name]))
+            feature = pc.subject_features(name, "fantasia", a.data_dir)
+            entry = subject_entry(name, feature)
+            feats[name] = feature
+            subjects.append(entry)
         except Exception as exc:  # report, do not hide, subjects that fail
             failed[name] = f"{type(exc).__name__}: {exc}"
         print(name, "ok" if name in feats else failed[name], flush=True)

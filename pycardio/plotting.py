@@ -51,8 +51,10 @@ def plot_cvc(data: Features | None = None, model: Features | None = None, ax=Non
     for f, color, label in ((data, DATA_COLOR, "data"), (model, MODEL_COLOR, "model")):
         if f is None or f.cvc.size == 0:
             continue
-        y = np.arange(1, f.cvc.size + 1) / f.cvc.size
-        ax.step(f.cvc, y, where="post", color=color, label=label)
+        phase = np.sort(f.cvc)
+        x = np.concatenate(([0], phase, [1]))
+        y = np.concatenate(([0], np.arange(1, phase.size + 1) / phase.size, [1]))
+        ax.step(x, y, where="post", color=color, label=label)
     ax.plot([0, 1], [0, 1], "k--", lw=0.5, label="uniform")
     ax.set_xlim(0, 1)
     ax.set_ylim(0, 1)

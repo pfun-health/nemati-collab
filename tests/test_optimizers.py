@@ -55,6 +55,12 @@ def test_cmaes_is_reproducible_and_handles_inf():
     assert np.isfinite(a.fun)
 
 
+def test_cmaes_evaluates_starting_point_when_budget_is_below_population():
+    res = cmaes(lambda x: float(np.sum((x - 1) ** 2)), np.array([0.0]), maxfev=3, seed=0)
+    assert res.fun == pytest.approx(1.0)
+    assert res.nfev == 1
+
+
 def test_adaptive_metropolis_recovers_gaussian():
     mean = np.array([0.5, 0.4])
     cov = np.array([[0.004, 0.003], [0.003, 0.0045]])
@@ -79,6 +85,19 @@ def test_adaptive_metropolis_recovers_gaussian():
     assert np.all(ess(chains) > 800)
 
 
+def test_adaptive_metropolis_rejects_out_of_bounds_start_before_logp():
+    def logp(_):
+        pytest.fail("logp must not be evaluated for an out-of-bounds start")
+
+    with pytest.raises(ValueError, match="starting point is outside bounds"):
+        adaptive_metropolis(logp, np.array([1.1]), 10, 5)
+
+
+def test_adaptive_metropolis_rejects_negative_warmup():
+    with pytest.raises(ValueError, match="n_warmup must be non-negative"):
+        adaptive_metropolis(lambda _: 0.0, np.array([0.5]), 10, -1)
+
+
 def test_rhat_detects_disagreeing_chains():
     rng = np.random.default_rng(0)
     chains = rng.standard_normal((4, 500, 1))
@@ -95,6 +114,14 @@ def test_ess_of_independent_and_correlated_draws():
         ar[:, i] = 0.9 * ar[:, i - 1] + rng.standard_normal((2, 1))
     # theoretical ESS factor (1 - rho) / (1 + rho) = 1/19
     np.testing.assert_allclose(ess(ar)[0], 8000 / 19, rtol=0.35)
+
+
+def test_ess_retains_positive_pairs_for_oscillating_autocorrelation():
+    rng = np.random.default_rng(42)
+    ar = np.zeros((2, 4000, 1))
+    for i in range(1, ar.shape[1]):
+        ar[:, i] = -0.8 * ar[:, i - 1] + rng.standard_normal((2, 1))
+    assert ess(ar)[0] > ar.shape[0] * ar.shape[1] * 1.5
 
 
 @pytest.fixture(scope="module")
