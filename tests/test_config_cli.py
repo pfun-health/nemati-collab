@@ -141,3 +141,44 @@ def test_cli_fit_and_sample_end_to_end(tmp_path, monkeypatch):
     )
     summary = json.loads((tmp_path / "m.json").read_text())["summary"]["hr"]
     assert summary["mean"] == pytest.approx(0.00095, rel=0.02)
+
+
+def test_download_caches_the_file_list(tmp_path, monkeypatch, capsys):
+    """Second call makes no request; a damaged file is fetched again."""
+    import hashlib
+
+    remote = {
+        "r1.hea": b"r1 1 100 10\nr1.dat 16 200 11 0 0 0 0 ECG\n",
+        "r1.dat": b"\x00" * 20,
+        "r1.ecg": b"ann",
+        "extra/readme.txt": b"not wanted",
+    }
+    sums = {k: hashlib.sha256(v).hexdigest() for k, v in remote.items()}
+    calls = {"index": 0, "fetch": []}
+
+    def index(database):
+        calls["index"] += 1
+        return ["r1"], ["ecg"], sums
+
+    def fetch(database, dest, names):
+        calls["fetch"].append(sorted(names))
+        for n in names:
+            (dest / n).write_bytes(remote[n])
+
+    monkeypatch.setattr(data, "_remote_index", index)
+    monkeypatch.setattr(data, "_fetch", fetch)
+
+    dest = data.download("db", tmp_path)
+    assert sorted(p.name for p in dest.glob("r1.*")) == ["r1.dat", "r1.ecg", "r1.hea"]
+    assert calls == {"index": 1, "fetch": [["r1.hea"], ["r1.dat", "r1.ecg"]]}
+
+    data.download("db", tmp_path)
+    assert calls["index"] == 1 and len(calls["fetch"]) == 2
+
+    (dest / "r1.dat").write_bytes(b"\x01" * 20)
+    data.download("db", tmp_path)
+    assert calls["index"] == 1 and calls["fetch"][-1] == ["r1.dat"]
+    assert (dest / "r1.dat").read_bytes() == remote["r1.dat"]
+
+    assert main(["download", "--database", "db", "--data-dir", str(tmp_path), "--refresh"]) == 0
+    assert calls["index"] == 2 and len(calls["fetch"]) == 3

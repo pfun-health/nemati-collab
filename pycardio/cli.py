@@ -50,7 +50,7 @@ def _savefig(fig, path: Path) -> None:
 def cmd_download(a):
     from .data import download
 
-    print(f"downloaded to {download(a.database, a.data_dir)}")
+    print(f"downloaded to {download(a.database, a.data_dir, refresh=a.refresh)}")
 
 
 def cmd_features(a):
@@ -182,6 +182,11 @@ def build_parser() -> argparse.ArgumentParser:
         )
 
     sp = sub.add_parser("download", help="download a PhysioNet database")
+    sp.add_argument(
+        "--refresh",
+        action="store_true",
+        help="list the files on PhysioNet again (ignore the cache)",
+    )
     data_args(sp)
     sp.set_defaults(func=cmd_download)
 
