@@ -223,8 +223,8 @@ void generation_loop(PyObject *self, struct Result *result){
   int N = a_p->N; // Dimensions of sample vect
   int lambda = s->lambda; // Number of offspring
 
-  double **arz = (double **) calloc(N, sizeof(double *)); // random mutation vect
-  double **arx = (double **) calloc(N, sizeof(double *)); // sample vect
+  arz = (double **) calloc(N, sizeof(double *)); // random mutation vect
+  arx = (double **) calloc(N, sizeof(double *)); // sample vect
   for (int i=0; i < N; i++){
     arz[i] = (double *) calloc(lambda, sizeof(double));
     arx[i] = (double *) calloc(lambda, sizeof(double));

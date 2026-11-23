@@ -163,8 +163,8 @@ if __name__ == "__main__":
     
     kwargs = dict(method=configDict['method'],
                   tol=configDict['tol'],
-                  maxiter=configDict['maxiter'],
-                  miniter=configDict['miniter'])
+                  maxiter=configDict.get('maxiter', None),
+                  miniter=configDict.get('miniter', None))
 
     # Multiprocessing
     nr_p = configDict['nr_p']

@@ -18,18 +18,9 @@ def complex_fourier(phase, *params):
     return result
 
 def interp_cvc(vec_data, cdf_data, vec_model, cdf_model):
-    
-    model_interp = [cdf_model[0]]
-    for ik, xk in enumerate(vec_data[1:-1]):
-        xl = vec_data[vec_data < xk][-1]
-        xr = vec_data[vec_data >= xk][0]
-        yl = cdf_model[np.argmin(np.abs(xl - vec_model))]
-        yr = cdf_model[np.argmin(np.abs(xr - vec_model))]
-        cdf = yl + (yr - yl) * (xk - xl) / (xr - xl)
-        model_interp.append(cdf)
-    model_interp.append(cdf_model[-1])
-
-    model_interp = np.array(model_interp, dtype=float).reshape(-1)
+    model_order = np.argsort(vec_model)
+    model_interp = np.interp(vec_data, vec_model[model_order],
+                             cdf_model[model_order])
 
     data_interp = cdf_data
     phi = vec_data

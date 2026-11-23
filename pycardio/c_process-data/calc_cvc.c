@@ -6,6 +6,7 @@
 void calc_cvc(double time[], int beat_ix[], int nr_beats, int resp_pks[], int nr_resp, double beat_latency[]){
   int ti, tj;
   for(ti=0; ti < nr_beats; ti++){
+    beat_latency[ti] = -999.0;
     double beat_time = time[beat_ix[ti]];
     for(tj=0; tj < nr_resp-1; tj++){
       double resp0 = time[resp_pks[tj]];

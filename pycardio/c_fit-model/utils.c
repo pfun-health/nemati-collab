@@ -328,7 +328,11 @@ void freeGlobalMem(int N) {
   free(arz);
   free(pc);
   free(ps);
-  free(s);
+  free(a_p);
+  if (s != NULL) {
+    free(s->weights);
+    free(s);
+  }
   free(adp);
   free(B);
   free(D);

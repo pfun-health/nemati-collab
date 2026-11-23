@@ -79,7 +79,7 @@ def plot_data(subject_name, database, path, opt_feature): # plot the relevant da
 def plot_result(subject_name, database, path, opt_feature, data_out): # plot the model result next to the data
     fnp = os.path.join(path, database)
     fn = os.path.join(fnp, 'paramSpace_{}_{}.npy'.format(opt_feature,subject_name))
-    ps = np.load(fn)[()]
+    ps = np.load(fn, allow_pickle=True)[()]
 
     print('\nplotting result...\n')
 

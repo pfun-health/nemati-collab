@@ -4,6 +4,7 @@ Robert Capps May 2018; adapted from CMA-ES
 N. Hansen: The CMA Evolution Strategy: A Comparing Review, StudFuzz 192, 75–102 (2006)*/
 
 #include "cmaes.h"
+#include <stdlib.h>
 
 int calc_lambda(int N){ return 4+floor(3*log(N)); }
 
@@ -59,14 +60,13 @@ void setupSelectionParams(InputArgs *a,
   printf("mu = %d\n",mu);
 #endif
   
-  double weights[mu];
+  s->weights = (double *) malloc(mu * sizeof(double));
   double w_sum, mueff;
-  w_sum = calc_weights(weights, mu);
-  mueff = calc_mueff(weights, w_sum, mu);
+  w_sum = calc_weights(s->weights, mu);
+  mueff = calc_mueff(s->weights, w_sum, mu);
   
   s->lambda = lambda;
   s->mu = mu;
-  s->weights = weights;
   s->mueff = mueff;
 }
 
@@ -100,34 +100,35 @@ void setup(int N,
 	    double stopfitness, int stopeval){
   
   // Input args to struct
-  InputArgs a = { N, xmean, sigma,
-		  stopfitness, stopeval };
+  a_p = (InputArgs *) malloc(sizeof(InputArgs));
+  *a_p = (InputArgs) { N, xmean, sigma,
+		       stopfitness, stopeval };
+  xmean_p = xmean;
 
   // Configure selection params
-  InputArgs *a_p = &a;
-  SelectionParams *s = malloc(sizeof(SelectionParams));
+  s = (SelectionParams *) calloc(1, sizeof(SelectionParams));
   setupSelectionParams(a_p, s);
 
   // Configure adaptation params
-  AdaptationParams *adp = malloc(sizeof(AdaptationParams));
+  adp = (AdaptationParams *) malloc(sizeof(AdaptationParams));
   setupAdaptationParams(a_p, s, adp);
 
   // Initialize dynamic (internal) strategy params and constants
   pc = (double *) calloc(N, sizeof(double));
   ps = (double *) calloc(N, sizeof(double));
 
-  double **B = eye(N);
-  double **D = eye(N);
-  double **BD = (double **) calloc(N, sizeof(double*));
+  B = eye(N);
+  D = eye(N);
+  BD = (double **) calloc(N, sizeof(double*));
 
   matmul2D(B, D, BD, N);
-  double **BD_t = transpose(BD, N);
+  BD_t = transpose(BD, N);
 
-  double **C = (double **) calloc(N, sizeof(double*));
+  C = (double **) calloc(N, sizeof(double*));
   matmul2D(BD, BD_t, C, N);
   
-  double eigeneval = 0.0;
-  double chiN = pow(N, 0.5) * ( 1 - ( 1 / (4*N) ) + ( 1 / (21*pow(N, 2)) ) );
+  eigeneval = 0;
+  chiN = pow(N, 0.5) * ( 1 - ( 1 / (4*N) ) + ( 1 / (21*pow(N, 2)) ) );
 }
 
 

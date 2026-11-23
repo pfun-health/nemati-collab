@@ -8,7 +8,7 @@ struct DistTable {
     double dist;
 };
 
-void pairwise_dists(double x1[], int N1, double x2[], int N2, DistTable dists[]);
+void pairwise_dists(double x1[], int N1, double x2[], int N2, struct DistTable dists[]);
 int compare_dists(const void *p1, const void *p2);
 void downsample(double x1[], int N1,
                 double x2[], int N2,
@@ -16,7 +16,7 @@ void downsample(double x1[], int N1,
 
 
 void pairwise_dists(double x1[], int N1, double x2[], int N2,
-                    DistTable dists[]){
+                    struct DistTable dists[]){
     int i,j,k;
     k = 0;
     double dist;

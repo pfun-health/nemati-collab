@@ -30,15 +30,6 @@ class ModelOutput(object):
             rri_times, resp_cycle, rri, rri_dev = DB.calc_RSA(self.output['time'].astype('float'),
                                                               self.output['hr'][:,0].astype('int32'),
                                                               self.output['tv'], calc_var=False)
-            if 'rsa' in output_key:
-                try:
-                    rri_times = rri_times[rri_times > rri_dev.min()]
-                    resp_cycle = resp_cycle[rri_dev > rri_dev.min()]
-                    rri = rri[rri_dev > rri_dev.min()]
-                    rri_dev = rri_dev[rri_dev > rri_dev.min()]
-                except ValueError as excep:
-                    # print("model ",excep)
-                    pass
             self.output['rri_times'] = rri_times
             self.output['rri'] = rri
             self.output['rri_dev'] = rri_dev

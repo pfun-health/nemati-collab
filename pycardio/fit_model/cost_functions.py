@@ -25,6 +25,7 @@ def CF_simple(f_data, f_model, var_data=None, N_data=None):
         raise RuntimeError("f_model should be 1 dimensional.")
     
     if isinstance(var_data, np.ndarray): variance = var_data
+    elif var_data is not None: variance = var_data
     
     elif all([not isinstance(var_data, np.ndarray), isinstance(f_data, np.ndarray)]):
         variance = np.power(calc_stderr(f_data.var(),f_data.size), 2)
@@ -59,15 +60,11 @@ def CF_rsa(rsa_data, rsa_model, var_data=None):
     var_data = rsa_data['rsa_var']
 
     try:
-        if data_rri.size > model_rri.size:
-            data_rri = data_rri[0::int(data_rri.size/model_rri.size)]
-            var_data = var_data[0::int(var_data.size/model_rri.size)]
-            if data_rri.size > model_rri.size:
-                data_rri = data_rri[int(data_rri.size-model_rri.size):]
-                var_data = var_data[int(var_data.size-model_rri.size):]
-
-        if model_rri.size > data_rri.size:
-            model_rri = model_rri[int(model_rri.size-data_rri.size):]
+        if not data_resp.size or not model_resp.size:
+            return np.inf
+        model_order = np.argsort(model_resp)
+        model_rri = np.interp(data_resp, model_resp[model_order],
+                              model_rri[model_order])
 
         cost1 = CF_simple(data_rri, model_rri, var_data=var_data) # RRI_dev cost
         
@@ -116,6 +113,7 @@ def CF_cvc(cvc_data, cvc_model, var_data=None):
 
 
     cdf_cost = 0
+    rot_cost = 0
     N = cdf_model.size
     
     try:
@@ -126,7 +124,6 @@ def CF_cvc(cvc_data, cvc_model, var_data=None):
                              cvc_model['exp_time'],
                              cvc_model['insp_time'])
         rot_cost = np.abs(data_rot - model_rot) * np.sqrt(N)
-        cdf_cost = cdf_cost + rot_cost
     except ValueError as excep:
         return np.inf
 
@@ -143,11 +140,10 @@ def CF_cvc(cvc_data, cvc_model, var_data=None):
     rsa_cost = CF_rsa(cvc_data, cvc_model)
     resp_cost = CF_resp(cvc_data, cvc_model)
 
-    cost = cdf_cost * (rsa_cost + resp_cost)
+    cost = cdf_cost + rot_cost + rsa_cost + resp_cost
 
     # print("cvc: {:.3f} ; rsa: {:.3f} ; resp: {:.3f}".format(cdf_cost, rsa_cost, resp_cost))
 
     if np.isnan(cost): cost = np.inf
 
     return cost
-

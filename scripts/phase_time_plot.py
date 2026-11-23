@@ -36,7 +36,7 @@ plt.title('Fantasia Data')
 plt.savefig('figs/f1o01_phase_time.svg')
 plt.close()
 
-my = np.load('./model_f2y03.npy')[()]
+my = np.load('./model_f2y03.npy', allow_pickle=True)[()]
 mtimes, mphase = give_bphase(my,model=True)
 
 plt.figure(figsize=(12,12),dpi=300)
@@ -47,7 +47,7 @@ plt.title('Simulation (Participant 2)')
 plt.savefig('figs/model_phase_time_2.svg')
 plt.close()
 
-my = np.load('./model_f1o01.npy')[()]
+my = np.load('./model_f1o01.npy', allow_pickle=True)[()]
 mtimes, mphase = give_bphase(my,model=True)
 
 plt.figure(figsize=(12,12),dpi=300)

@@ -65,7 +65,7 @@ RUN pip3 install wfdb==1.3.7
 WORKDIR /home/$USER/Git/nemati-collab/
 
 ADD ./build.sh ./
-ADD ./src/ ./
-ADD ./scripts/ ./
+ADD ./pycardio/ ./pycardio/
+ADD ./scripts/ ./scripts/
 
 RUN /bin/bash ./build.sh

@@ -23,7 +23,7 @@ def plot_sampling(subject_name, database, path, opt_feature): # plot the paramet
 
     fnp = os.path.join(path, database)
     fn = os.path.join(fnp, 'paramSpace_{}_{}.npy'.format(opt_feature,subject_name))
-    ps = np.load(fn)[()]
+    ps = np.load(fn, allow_pickle=True)[()]
 
     nkeys = ['defaultParams', 'result', 'cost', 'labels', 'opt_label', 'covar', 'cdf']
     params = sorted([pk for pk in ps.keys() if pk not in nkeys and len(ps[pk]) > 0])

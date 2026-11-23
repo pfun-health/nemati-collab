@@ -16,7 +16,7 @@ if __name__ == '__main__':
     if len(sys.argv) > 2:
         subject, opt_feature = sys.argv[1:]
 
-    paramSpace = np.load(os.path.expanduser("~/Public/fantasia/sampleSpace_{}_{}.npy".format(opt_feature,subject)))[()]
+    paramSpace = np.load(os.path.expanduser("~/Public/fantasia/sampleSpace_{}_{}.npy".format(opt_feature,subject)), allow_pickle=True)[()]
 
 
     print('\n {} {} \n'.format(subject, opt_feature))

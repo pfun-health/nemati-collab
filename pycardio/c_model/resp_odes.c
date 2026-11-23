@@ -17,10 +17,10 @@ double rand_scale(){
 }
 
 // biophysics functions
-double ninf(double v) { return( 1/(1+exp((v-v12n)/kn)) ); }
-double mpinf(double v) { return( 1/(1+exp((v-v12mp)/kmp)) ); }
-double hpinf(double v) { return( 1/(1+exp((v-v12hp)/khp)) ); }
-double tauinf(double v) { return( tauhp/cosh((v-v12hp)/(khp)) ); }
+double ninf(double v, const struct parameters *p) { return( 1/(1+exp((v-p->v12n)/p->kn)) ); }
+double mpinf(double v, const struct parameters *p) { return( 1/(1+exp((v-p->v12mp)/p->kmp)) ); }
+double hpinf(double v, const struct parameters *p) { return( 1/(1+exp((v-p->v12hp)/p->khp)) ); }
+double tauinf(double v, const struct parameters *p) { return( p->tauhp/cosh((v-p->v12hp)/(p->khp)) ); }
 
 double vlow = -50;
 double vhigh = -20;
@@ -60,43 +60,43 @@ int rhs (double t,
   (void)(t);
 
   //pre-i/i
-  double n0 = ninf(y[0]);
-  dy[0]= -gKdr*n0*n0*n0*n0*(y[0]-EK)-gL*(y[0]-EL)-gNaP*mpinf(y[0])*y[5]*(y[0]-ENa);
-  dy[0]+= -gE*p->d1*(y[0]-Ee)-gI*(b31*f(y[2])+b41*f(y[3]))*(y[0]-Ei);
-  dy[0]/= C;
+  double n0 = ninf(y[0], p);
+  dy[0]= -p->gKdr*n0*n0*n0*n0*(y[0]-p->EK)-p->gL*(y[0]-p->EL)-p->gNaP*mpinf(y[0], p)*y[5]*(y[0]-p->ENa);
+  dy[0]+= -p->gE*p->d1*(y[0]-p->Ee)-p->gI*(p->b31*f(y[2])+p->b41*f(y[3]))*(y[0]-p->Ei);
+  dy[0]/= p->C;
 
   //early-i
-  double n1 = ninf(y[1]);
-  dy[1]= -gKdr*n1*n1*n1*n1*(y[1]-EK)-gL*(y[1]-EL)-gAD*p->eiAd*(y[1]-EK);
-  dy[1]+= -gE*(p->d2+a12*f(y[0]))*(y[1]-Ee)-gI*(b32*f(y[2])+b42*f(y[3])+hb2*y[8]+st2)*(y[1]-Ei);
-  dy[1]/= C;
+  double n1 = ninf(y[1], p);
+  dy[1]= -p->gKdr*n1*n1*n1*n1*(y[1]-p->EK)-p->gL*(y[1]-p->EL)-p->gAD*p->eiAd*(y[1]-p->EK);
+  dy[1]+= -p->gE*(p->d2+p->a12*f(y[0]))*(y[1]-p->Ee)-p->gI*(p->b32*f(y[2])+p->b42*f(y[3])+p->hb2*y[8]+p->st2)*(y[1]-p->Ei);
+  dy[1]/= p->C;
 
   //aug-e
-  double n2 = ninf(y[2]);
-  dy[2]= -gKdr*n2*n2*n2*n2*(y[2]-EK)-gL*(y[2]-EL)-gAD*y[6]*(y[2]-EK);
-  dy[2]+= -gE*(p->d3)*(y[2]-Ee)-gI*(b23*f(y[1])+b43*f(y[3]))*(y[2]-Ei);
-  dy[2]/= C;
+  double n2 = ninf(y[2], p);
+  dy[2]= -p->gKdr*n2*n2*n2*n2*(y[2]-p->EK)-p->gL*(y[2]-p->EL)-p->gAD*y[6]*(y[2]-p->EK);
+  dy[2]+= -p->gE*(p->d3)*(y[2]-p->Ee)-p->gI*(p->b23*f(y[1])+p->b43*f(y[3]))*(y[2]-p->Ei);
+  dy[2]/= p->C;
 
   //post-i
-  double n3 = ninf(y[3]);
-  dy[3]= -gKdr*n3*n3*n3*n3*(y[3]-EK)-gL*(y[3]-EL)-gAD*y[7]*(y[3]-EK);
-  dy[3]+= -gE*(p->d4+hb*y[8]+st4+p->baro*y[10])*(y[3]-Ee)-gI*(b24*f(y[1])+b34*f(y[2]))*(y[3]-Ei);
-  dy[3]/= C;
+  double n3 = ninf(y[3], p);
+  dy[3]= -p->gKdr*n3*n3*n3*n3*(y[3]-p->EK)-p->gL*(y[3]-p->EL)-p->gAD*y[7]*(y[3]-p->EK);
+  dy[3]+= -p->gE*(p->d4+p->hb*y[8]+p->st4+p->baro*y[10])*(y[3]-p->Ee)-p->gI*(p->b24*f(y[1])+p->b34*f(y[2]))*(y[3]-p->Ei);
+  dy[3]/= p->C;
 
   //ramp-i
-  double n4 = ninf(y[4]);
-  dy[4]= -gKdr*n4*n4*n4*n4*(y[4]-EK)-gL*(y[4]-EL);
-  dy[4]+= -gE*(p->d5+a15*f(y[0]))*(y[4]-Ee)-gI*(b25*f(y[1])+b35*f(y[2])+b45*f(y[3]))*(y[4]-Ei);
-  dy[4]/= C;
+  double n4 = ninf(y[4], p);
+  dy[4]= -p->gKdr*n4*n4*n4*n4*(y[4]-p->EK)-p->gL*(y[4]-p->EL);
+  dy[4]+= -p->gE*(p->d5+p->a15*f(y[0]))*(y[4]-p->Ee)-p->gI*(p->b25*f(y[1])+p->b35*f(y[2])+p->b45*f(y[3]))*(y[4]-p->Ei);
+  dy[4]/= p->C;
 
   //pre-i/i nap inactivation
-  dy[5]= (hpinf(y[0])-y[5]) / tauinf(y[0]);
+  dy[5]= (hpinf(y[0], p)-y[5]) / tauinf(y[0], p);
 
   // aug-e iAD activation
-  dy[6]= (f(y[2])-y[6])/tad;
+  dy[6]= (f(y[2])-y[6])/p->tad;
 
   // post-i iAD activation
-  dy[7]= (f(y[3])-y[7])/tad;
+  dy[7]= (f(y[3])-y[7])/p->tad;
 
   dy[8]= ( f(y[4]) - y[8] ) / p->taul; // tidal volume
 

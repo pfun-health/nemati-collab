@@ -280,7 +280,7 @@ class Optimizer(object):
             take_step_wrapped = AdaptiveStepsize(displace,
                                                  interval=alg_args['interval'],
                                                  verbose=alg_args['disp'],
-                                                 accept_rate=alg_args['accept_rate'])
+                                                 accept_rate=alg_args.pop('accept_rate', 0.5))
             alg_args.update( { 'take_step': take_step_wrapped })
 
             if tol: alg_args['minimizer_kwargs']['tol'] = tol

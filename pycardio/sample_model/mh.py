@@ -7,15 +7,13 @@ class SamplerMH(Sampler):
 
     def _acceptance(self, candidates, x, L):
         """ Metropolis Hastings acceptance criteria """
-        nr_accepted = 0
-        U = np.random.random()
-        keepers = [c for c in candidates if (c[1] / L) >= U]
-        for cx, cl in keepers:
-            print(cx, cl)
-            self._updateParamSpace(cx)
-            self.paramSpace['L'].append(cl)
-            nr_accepted += 1
-        self.arate += (nr_accepted / len(candidates))
-        self.arate /= 2.0
+        cx, cl = candidates[np.random.randint(len(candidates))]
+        accepted = cl >= L or (L > 0 and np.random.random() < cl / L)
+        if not accepted:
+            cx, cl = x, L
+        print(cx, cl)
+        self._updateParamSpace(cx)
+        self.paramSpace['L'].append(cl)
+        self.arate = (self.arate + float(accepted)) / 2.0
 
     

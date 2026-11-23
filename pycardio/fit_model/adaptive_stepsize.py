@@ -103,5 +103,5 @@ class RandomDisplacement(object):
         self.random_state = check_random_state(random_state)
 
     def __call__(self, x):
-        x += self.random_state.normal(x, self.stepsize, size=np.shape(x))
+        x += self.random_state.normal(0.0, self.stepsize, size=np.shape(x))
         return x

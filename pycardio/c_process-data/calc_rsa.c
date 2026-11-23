@@ -8,6 +8,11 @@ void calc_rsa(double time[],
 	      int resp_pks[], int nr_resp,
 	      double rri_phase[][3]){
   int ti, tj;
+  for (ti=0; ti < nr_beats; ti++) {
+    rri_phase[ti][0] = -999;
+    rri_phase[ti][1] = -999;
+    rri_phase[ti][2] = -999;
+  }
   for(ti=0; ti < nr_beats-1; ti++){
     double beat_time0 = time[beat_ix[ti]];
     double beat_time1 = time[beat_ix[ti+1]];

@@ -2,8 +2,15 @@
 #include <stdio.h>
 #include <math.h>
 
+struct DistTable {
+    int ix;
+    int ix1;
+    int ix2;
+    double dist;
+};
+
 void pairwise_dists(double x1[], int N1, double x2[], int N2,
-                    struct DistTable dists){
+                    struct DistTable dists[]){
     int i,j,k;
     k = 0;
     for(i=0; i<N1; i++){
@@ -16,13 +23,6 @@ void pairwise_dists(double x1[], int N1, double x2[], int N2,
         }
     }
 }
-
-struct DistTable {
-    int ix;
-    int ix1;
-    int ix2;
-    double dist;
-};
 
 int compare_dists(const void *p1, const void *p2){ // sorted least->greatest
   return (int) floor( (*(struct DistTable*)p2).dist - (*(struct DistTable*)p1).dist);
@@ -41,13 +41,17 @@ void downsample(double x1[], int N1,
     int shift;
     shift = N2 > N1 ? N1 : N2;
     int Nk = N3 - shift;
+    for (int ik = 0; ik < N3; ik++) {
+        for (int column = 0; column < 4; column++)
+            xout[ik][column] = -999.0;
+    }
+
     int ik = 0;
-    while (ik < N3) {
+    while (ik < shift) {
         xout[ik][0] = (double) dt[Nk+ik].ix;
         xout[ik][1] = (double) dt[Nk+ik].ix1;
         xout[ik][2] = (double) dt[Nk+ik].ix2;
         xout[ik][3] = (double) dt[Nk+ik].dist;
-
         ik++;
     }
 

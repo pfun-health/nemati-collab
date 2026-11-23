@@ -16,15 +16,15 @@ def load_stats(subject, database, path=None):
         path = os.path.expanduser('~/Public')
     dpath = os.path.join(path, database)
     spath = os.path.join(dpath, subject_path)
-    stats = np.load(spath)[()]
+    stats = np.load(spath, allow_pickle=True)[()]
     return stats
 
 def load_all_stats(database='fantasia', path=None):
     if not path:
         path = os.path.expanduser('~/Public')
     dpath = os.path.join(path, database)
-    subjects = list(set([os.path.splitext(f)[0] for f in os.listdir(dpath) if os.path.isfile(os.path.join(dpath, f))\
-                         and '_' not in f]))
+    subjects = list(set([os.path.splitext(f)[0] for f in os.listdir(dpath) if f.endswith('.npy')\
+                         and os.path.isfile(os.path.join(dpath, f)) and '_' not in f]))
     all_stats = {}
     for subject in subjects:
         stats_loaded = load_stats(subject,database,path=path)
