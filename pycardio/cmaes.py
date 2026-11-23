@@ -103,6 +103,11 @@ def cmaes(
         xc = np.clip(x, lo, hi)
         return xc, float(np.sum((x - xc) ** 2))
 
+    if 0 < maxfev < lam:
+        best_f = float(fun(m))
+        best_x = m.copy()
+        nfev = 1
+
     while nfev + lam <= maxfev:
         gen += 1
         z = rng.standard_normal((lam, N))

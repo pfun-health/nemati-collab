@@ -92,6 +92,10 @@ def adaptive_metropolis(
     """
     rng = rng or np.random.default_rng()
     x = np.array(x0, dtype=float)
+    if n_warmup < 0:
+        raise ValueError("n_warmup must be non-negative")
+    if bounds is not None and not np.all((x >= bounds[0]) & (x <= bounds[1])):
+        raise ValueError("starting point is outside bounds")
     d = x.size
     lp = logp(x)
     if not np.isfinite(lp):
@@ -167,12 +171,12 @@ def ess(chains: np.ndarray) -> np.ndarray:
             continue
         rho = acf / acf[0]
         s = 0.0
-        for t in range(1, n - 1, 2):
+        for t in range(0, n - 1, 2):
             pair = rho[t] + rho[t + 1]
             if pair < 0:
                 break
             s += pair
-        out[j] = c * n / max(1.0 + 2.0 * s, 1e-12)
+        out[j] = c * n / max(-1.0 + 2.0 * s, 1e-12)
     return out
 
 
