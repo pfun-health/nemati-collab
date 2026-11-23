@@ -1,0 +1,68 @@
+{
+     "LIB_PATH": "/home/robertc/Git/nemati-collab",
+     "path": "~/Public",
+     "database": "fantasia",
+     "subject_name": "f1o01",
+     "opt_feature": "cvc",
+     "method": "genetic_alg",
+    "freeParams": {
+	"baro": 0.00,
+	"d2": 0.571,
+	"d4": 0.49,
+	"hr": 0.00084,
+	"po": 0.01,
+	"rsa1": 0.000162,
+	"rsa2": 0.000462,
+	"taup": 1000
+    },
+    "bounds": {
+        "d2": [
+             0.45,
+             0.65
+         ],
+         "d4": [
+             0.35,
+             0.55
+         ],
+         "baro": [
+            0.00,
+            0.0001
+         ],
+	 "hr": [
+	   0.0008,
+	   0.0009
+	 ],
+	 "po": [
+	     0.01,
+	     0.03
+	 ],
+	 "rsa1": [
+	   0.00009,
+	   0.00015
+	 ],
+	 "rsa2": [
+	   0.00009,
+	   0.00015
+	 ],
+	 "taup": [
+	   800,
+	   1100
+	 ]
+     },
+     "maxiter": 25,
+     "miniter": 10,
+     "tol": 0.006,
+     "simtime": 240,
+     "nr_p": 1,
+     "ga_args": {
+         "disp": 1,
+         "popsize": 10,
+         "seed": null,
+         "mutation": [
+             1.0,
+             1.75
+          ],
+         "recombination": 0.1
+     },
+     "defaultParams": null
+}

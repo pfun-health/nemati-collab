@@ -1,0 +1,46 @@
+{
+     "LIB_PATH": "/home/robertc/Git/nemati-collab",
+     "path": "~/Public",
+     "database": "fantasia",
+     "subject_name": "f1y02",
+     "opt_feature": "rsa",
+     "method": "genetic_alg",
+     "freeParams": {
+	 "hr": 0.00077,
+         "rsa1": 0.0005,
+         "rsa2": 0.00068
+     },
+     "bounds": {
+       "hr": [
+	 0.00075,
+	 0.0009
+       ],
+       "rsa1": [
+	 0.00025,
+	 0.00055
+       ],
+       "rsa2": [
+	 0.00055,
+	 0.0008
+       ]
+     },
+     "maxiter": 10,
+     "miniter": 10,
+     "tol": 0.006,
+     "simtime": 120,
+     "nr_p": 1,
+     "ga_args": {
+         "disp": 1,
+         "popsize": 10,
+         "seed": null,
+         "mutation": [
+             1.5,
+             1.99
+          ],
+         "recombination": 0.25
+     },
+    "defaultParams": {
+	"d2": 0.62,
+	"d4": 0.43
+    }
+}

@@ -1,0 +1,105 @@
+{
+     "LIB_PATH": "/home/robertc/Git/nemati-collab",
+     "path": "~/Public",
+     "database": "fantasia",
+     "subject_name": "f1y02",
+     "opt_feature": "rri_ave",
+     "method": "genetic_alg",
+     "freeParams": {
+          "hr": 0.00092
+     },
+     "bounds": {
+          "hr": [
+               0.00001,
+               0.012
+          ]
+     },
+     "maxiter": 200,
+     "miniter": 10,
+     "tol": 1e-3,
+     "simtime": 30,
+     "nr_p": 8,
+     "ga_args": {
+         "disp": 1,
+         "popsize": 10,
+         "seed": null,
+         "mutation": [
+             0.75,
+             1.9
+          ],
+         "recombination": 0.5
+     },
+     "min_args": {
+          "options": {
+               "maxiter": 10000,
+               "disp": true
+          }
+     },
+     "basin_args": {
+        "niter": 15000,
+        "disp": true,
+        "T": 6.0,
+	"accept_rate": 0.2,
+        "stepsize": [
+	    0.001,
+	    0.001
+	],
+        "niter_success": 1000,
+        "interval": 200
+     },
+    "defaultParams": {
+          "hr": 0.00092,
+          "rsa1": 0.0005,
+          "rsa2": 0.0007,
+          "st2": 0.0,
+          "st4": 0.0,
+          "v12mp": -40.0,
+          "kmp": -6.0,
+          "EL": -60.0,
+          "C": 20.0,
+          "gL": 2.8,
+          "v12hp": -55.0,
+          "khp": 10.0,
+          "tauhp": 4000.0,
+          "gNaP": 5.0,
+          "ENa": 50.0,
+          "EK": -85.0,
+          "Ee": 0.0,
+          "Ei": -75.0,
+          "v12n": -30.0,
+          "kn": -4.0,
+          "gKdr": 5.0,
+          "gAD": 10.0,
+          "tad": 2000,
+          "gE": 10.0,
+          "gI": 60.0,
+          "po": 0.07,
+          "taup": 1300,
+          "taul": 1000,
+          "taupp": 500,
+          "hb": 0.2,
+          "hb2": 0.0,
+          "baro": 0.1,
+          "sym": 0.0,
+          "db": 0.0007,
+          "sb": 0.0,
+          "a12": 0.5,
+          "b32": 0.05,
+          "b42": 0.42,
+          "b23": 0.42,
+          "b43": 0.2,
+          "b24": 0.22,
+          "b34": 0.0,
+          "a15": 0.5,
+          "b25": 0.3,
+          "b35": 0.7,
+          "b45": 0.7,
+          "b41": 0.1,
+          "b31": 0.0,
+          "d1": 0.09,
+          "d2": 0.564,
+          "d3": 0.45,
+          "d4": 0.436,
+          "d5": 0.702
+     }
+}
