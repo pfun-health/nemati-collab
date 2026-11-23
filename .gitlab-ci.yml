@@ -1,0 +1,10 @@
+before_script:
+    - apt-get install docker
+
+stages:
+    - build
+
+run-build:
+    stage: build
+    script:
+        - ./build.sh
